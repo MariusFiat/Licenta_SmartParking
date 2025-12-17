@@ -1,0 +1,12 @@
+# Ignore environment files with secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtualenv
+.venv/
+
+# OS files
+.DS_Store
