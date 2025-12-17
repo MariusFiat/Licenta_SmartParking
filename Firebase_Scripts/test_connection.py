@@ -4,7 +4,11 @@ from pathlib import Path
 
 try:
   from dotenv import load_dotenv
-  env_path = Path('.env')
+  # Prefer .env located next to this script, fallback to repository root
+  script_dir = Path(__file__).parent
+  env_path = script_dir / '.env'
+  if not env_path.exists():
+    env_path = Path('.env')
   if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 except Exception:
