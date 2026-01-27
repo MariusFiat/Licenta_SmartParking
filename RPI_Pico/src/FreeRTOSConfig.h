@@ -41,6 +41,9 @@
  *----------------------------------------------------------*/
 
 #define configCPU_CLOCK_HZ    ( 125000000UL )
+#define vPortSVCHandler       isr_svc
+#define xPortPendSVHandler    isr_pendsv
+#define xPortSysTickHandler   isr_systick
 
 /* Scheduler Related */
 #define configUSE_PREEMPTION                    1
