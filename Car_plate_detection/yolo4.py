@@ -69,7 +69,7 @@ def detect_plates(cap, side):
                 text = ocr_plate(cropped_plate)
                 results_plates.append(text)
                 preview_frame = draw_detection(preview_frame, x1, y1, x2, y2, text)
-                print(f"[OCR {side}] #{num_detected+1} : {text}")
+                # print(f"[OCR {side}] #{num_detected+1} : {text}")
                 num_detected += 1
                 break  # doar prima plăcuță găsită pe frame
 
@@ -92,7 +92,7 @@ def plateRecognition(cap, side):
     if results_plates:
         counter = Counter(results_plates)
         most_common = counter.most_common(1)[0]
-        print(f"\nCel mai frecvent {side}: '{most_common[0]}' cu {most_common[1]} aparitii.")
+        # print(f"\nCel mai frecvent {side}: '{most_common[0]}' cu {most_common[1]} aparitii.")
         return most_common[0]
     else:
         print(f"\nNu s-a detectat nicio plăcuță pe {side}.")
