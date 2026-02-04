@@ -6,8 +6,8 @@ from ultralytics import YOLO
 import cv2
 import time
 
-YOLO_PATH = "/Users/mariusfiat/Programming_Environment/Licenta_Fiat/Car_plate_detection/ModelWeights/best.pt"
-MAX_SAVED = 5
+YOLO_PATH = "/home/mariusfiat07/Documents/Licenta_SmartParking/Car_plate_detection/ModelWeights/best.pt"
+MAX_SAVED = 3
 
 # Încarcă modelul YOLO și PARSeq
 yolo_model = YOLO(YOLO_PATH)
