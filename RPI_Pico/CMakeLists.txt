@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.12)
 SET(ProjectName RPI_Pico)
 
 # 2. Configurare SDK
+set(PICO_BOARD pico_w)
 set(PICO_SDK_FETCH_FROM_GIT ON)
 include(pico_sdk_import.cmake)
 

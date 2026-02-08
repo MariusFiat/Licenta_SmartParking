@@ -23,6 +23,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # Linkăm librăriile de bază din Pico SDK
 target_link_libraries(${PROJECT_NAME} 
     pico_stdlib
+    pico_cyw43_arch_none
 )
 
 # Activăm output-ul pe USB ca să vedem printf()
