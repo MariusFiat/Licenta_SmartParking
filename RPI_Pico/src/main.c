@@ -14,6 +14,7 @@ int main()
 
     //xTaskCreate(led_task, "LED_Task", 256, NULL, 1, NULL);
     xTaskCreate(detect_entry, "Detetect_Entry", 256, NULL, 1, NULL);
+    xTaskCreate(detect_exit, "Detect_Exit", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
     while(1){};
