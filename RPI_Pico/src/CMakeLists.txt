@@ -1,6 +1,9 @@
 add_executable(${PROJECT_NAME}
     main.c
     # Adaugă aici și alte fișiere .c din src dacă ai
+    board_config.c
+    test_led.c
+    detect.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
