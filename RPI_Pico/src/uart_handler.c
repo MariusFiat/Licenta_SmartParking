@@ -54,6 +54,8 @@ static void checkEntryRequest(){
                     printf("Entry access denied!\n");
                     /* The barrier remain closed. The detect_entry task will be resumed. */
                 }
+                command_Entry[0] = 0;
+                readEntryResponseDone = false;
 
                 lastEntryRead = false;
                 xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
@@ -97,6 +99,8 @@ static void checkExitRequest(){
             else{
                 printf("Exit access denied!\n");
             }
+            command_Exit[0] = 0;
+            readExitResponseDone = false;
 
             lastExitRead = false;
             xSemaphoreGive(xSemaphore_Exit_Res);
