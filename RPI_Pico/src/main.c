@@ -17,5 +17,6 @@ int main()
     xTaskCreate(detect_exit, "Detect_Exit", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
+    printf("%s", "FreeRTOS has run out of RAM memory!");
     while(1){};
 }
