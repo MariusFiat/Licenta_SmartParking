@@ -1,6 +1,9 @@
 add_executable(${PROJECT_NAME}
     main.c
     # Adaugă aici și alte fișiere .c din src dacă ai
+    board_config.c
+    test_led.c
+    detect.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
@@ -23,6 +26,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 # Linkăm librăriile de bază din Pico SDK
 target_link_libraries(${PROJECT_NAME} 
     pico_stdlib
+    pico_cyw43_arch_none
 )
 
 # Activăm output-ul pe USB ca să vedem printf()
