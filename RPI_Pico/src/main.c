@@ -12,17 +12,21 @@
 
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/
+QueueHandle_t xQueue_Exit_Req = NULL;
 
 /* Init semaphores */
 SemaphoreHandle_t xSemaphore_Entry_Res = NULL;
+SemaphoreHandle_t xSemaphore_Exit_Res = NULL;
 
 int main()
 {
     init_board();
 
     xQueue_Entry_Req = xQueueCreate(QUEUE_ENTRY_REQ_LENGTH, sizeof(bool));
+    xQueue_Exit_Req = xQueueCreate(QUEUE_EXIT_REQ_LENGTH, sizeof(bool));
 
     xSemaphore_Entry_Res = xSemaphoreCreateBinary();
+    xSemaphore_Exit_Res = xSemaphoreCreateBinary();
 
     //xTaskCreate(led_task, "LED_Task", 256, NULL, 1, NULL);
     xTaskCreate(detect_entry, "Detetect_Entry", 256, NULL, 1, NULL);

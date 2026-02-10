@@ -62,10 +62,12 @@ void detect_exit(void* params){
 
         if(object_detected){
             //Save the signal in the communication Queue.
-
+            xQueueSend(xQueue_Exit_Req, &object_detected, 0);
+            xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
         }
         else{
             /* Do nothing. */
+            xQueueSend(xQueue_Exit_Req, &object_detected, 0);
         }
         
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
