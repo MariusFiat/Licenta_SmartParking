@@ -11,7 +11,12 @@
 static void checkEntryRequest();
 static void checkExitRequest();
 static bool read_user_data(char*);
+static void route_message_from_rpi5();
 
+static bool readEntryResponseDone = false;
+static char command_Entry[COMMAND_LENGTH + 1];
+static bool readExitResponseDone = false;
+static char command_Exit[COMMAND_LENGTH + 1];
 
 void uart_handler(void* pvParams){
     (void) pvParams;
@@ -20,6 +25,7 @@ void uart_handler(void* pvParams){
         printf("%s\n", "The uart task is running!");
         checkEntryRequest();
         checkExitRequest();
+        route_message_from_rpi5();
 
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));
     }
@@ -30,18 +36,13 @@ static void checkEntryRequest(){
     static bool sensorStateReceived = false;
     static bool lastEntryRead = false;
     static int received_Response;
-    static bool readEntryResponseDone = false;
 
-    static char command_Entry[COMMAND_LENGTH + 1];
     static int i = 0;
 
         if(lastEntryRead == true){
             /* Send signal to the python scrip */
 
             /* If the response is received, then, open/not the barrier*/
-            taskENTER_CRITICAL();
-            readEntryResponseDone = read_user_data(command_Entry);
-            taskEXIT_CRITICAL();
             
             if(readEntryResponseDone){
                 if(strstr(command_Entry, "ENA") != NULL){
@@ -80,17 +81,12 @@ static void checkEntryRequest(){
 static void checkExitRequest(){
     static bool sensorStateReceived = false;
     static bool lastExitRead = false;
-    static bool readExitResponseDone = false;
 
-    static char command_Exit[COMMAND_LENGTH + 1];
 
     if(lastExitRead == true){
         /* Send signal to the python script */
 
         /* If the response is received, then, open/not the exit barrier */
-        taskENTER_CRITICAL();
-        readExitResponseDone = read_user_data(command_Exit);
-        taskEXIT_CRITICAL();
 
         if(readExitResponseDone){
             if(strstr(command_Exit, "EXA") != NULL){
@@ -130,6 +126,7 @@ static bool read_user_data(char *out_buffer) {
 
     int c = getchar_timeout_us(0);
 
+
     if (c != PICO_ERROR_TIMEOUT) {
         if (c >= 32 && c <= 126) { 
             internal_buffer[current_idx++] = (char)c;
@@ -138,15 +135,38 @@ static bool read_user_data(char *out_buffer) {
         if (current_idx == COMMAND_LENGTH) {
             internal_buffer[COMMAND_LENGTH] = '\0';
             
-            for(int i = 0; i <= COMMAND_LENGTH; i++) {
+            for(int i = 0; i < COMMAND_LENGTH; i++) {
                 out_buffer[i] = internal_buffer[i];
             }
 
             current_idx = 0;
             printf("\n[System] RPI5 send: %s\n", out_buffer);
+            while(getchar_timeout_us(0) != PICO_ERROR_TIMEOUT); /*Clear the bufer */
+
             return true; 
         }
     }
 
+
     return false;
+}
+
+static void route_message_from_rpi5(){
+    static char command[COMMAND_LENGTH + 1];
+    static bool readStatus = false;
+    
+        vTaskSuspendAll();
+        readStatus = read_user_data(command);
+        xTaskResumeAll();
+
+    if(readStatus){
+        if(strstr(command, "EN")){
+            readEntryResponseDone = readStatus;
+            strcpy(command_Entry, command);
+        }
+        else if(strstr(command, "EX")){
+            readExitResponseDone = readStatus;
+            strcpy(command_Exit, command);
+        }
+    }
 }

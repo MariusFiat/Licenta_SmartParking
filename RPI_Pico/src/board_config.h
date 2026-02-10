@@ -2,7 +2,7 @@
 #define __BOARD_CONFIG_H
 
 #define USE_PICO_WH 1 //Board type, pico wifi or not.
-#define TASK_DELAY 2000
+#define TASK_DELAY 1000
 
 /* Pins declarations */
 #define ENTRY_SENSOR 0  /* IR sensor for vehicle detection at the parking entry. */
