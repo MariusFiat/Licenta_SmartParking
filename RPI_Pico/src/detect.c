@@ -35,8 +35,7 @@ void detect_entry(void* params){
 
             */
             xQueueSend(xQueue_Entry_Req, &object_detected, 0);
-            xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Block and wait the signal from the uart handler task. */
-
+            xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
         } else {
             #if USE_PICO_WH == 1
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);

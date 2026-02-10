@@ -27,6 +27,8 @@ void uart_handler(void* pvParams){
             
             lastEntryRead = false;
             xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
+
+            vTaskDelay(pdMS_TO_TICKS(100));
         }
         else if(lastEntryRead == false){ /* If there was not detected any obstacle, than run normally. */
             
@@ -38,6 +40,7 @@ void uart_handler(void* pvParams){
             } else if(sensorStateReceived == true){
                 printf("%s\n", "The detect entry task is blocked");
                 lastEntryRead = true;
+                xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
             }
         }
 
