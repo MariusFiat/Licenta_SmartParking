@@ -6,7 +6,7 @@
 
 #include "board_config.h"
 #include "detect.h"
-#include "queues_header.h"
+#include "shared_resources.h"
 
 void detect_entry(void* params){
     (void) params;
@@ -35,6 +35,7 @@ void detect_entry(void* params){
 
             */
             xQueueSend(xQueue_Entry_Req, &object_detected, 0);
+            xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Block and wait the signal from the uart handler task. */
 
         } else {
             #if USE_PICO_WH == 1
