@@ -6,10 +6,12 @@
 
 #define QUEUE_ENTRY_REQ_LENGTH 1
 #define QUEUE_EXIT_REQ_LENGTH 1
+#define QUEUE_SERVO_LENGTH 2
 
 /* Queues declarations */
 extern QueueHandle_t xQueue_Entry_Req;
 extern QueueHandle_t xQueue_Exit_Req;
+extern QueueHandle_t xQueue_Servo;
 
 /* Synchronization variables */
 extern SemaphoreHandle_t xSemaphore_Entry_Res;
