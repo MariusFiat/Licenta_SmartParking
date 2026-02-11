@@ -6,12 +6,20 @@
 
 #define QUEUE_ENTRY_REQ_LENGTH 1
 #define QUEUE_EXIT_REQ_LENGTH 1
-#define QUEUE_SERVO_LENGTH 2
+
+
+typedef struct{
+    bool state;
+    bool dir;
+}ServoMessage_t;
+
+#define QUEUE_SERVO_LENGTH 1
 
 /* Queues declarations */
 extern QueueHandle_t xQueue_Entry_Req;
 extern QueueHandle_t xQueue_Exit_Req;
-extern QueueHandle_t xQueue_Servo;
+extern QueueHandle_t xQueue_Servo_Entry;
+extern QueueHandle_t xQueue_Servo_Exit;
 
 /* Synchronization variables */
 extern SemaphoreHandle_t xSemaphore_Entry_Res;

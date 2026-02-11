@@ -14,6 +14,8 @@
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/
 QueueHandle_t xQueue_Exit_Req = NULL;
+QueueHandle_t xQueue_Servo_Entry = NULL;
+QueueHandle_t xQueue_Servo_Exit = NULL;
 
 /* Init semaphores */
 SemaphoreHandle_t xSemaphore_Entry_Res = NULL;
@@ -25,6 +27,8 @@ int main()
 
     xQueue_Entry_Req = xQueueCreate(QUEUE_ENTRY_REQ_LENGTH, sizeof(bool));
     xQueue_Exit_Req = xQueueCreate(QUEUE_EXIT_REQ_LENGTH, sizeof(bool));
+    xQueue_Servo_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+    xQueue_Servo_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
 
     xSemaphore_Entry_Res = xSemaphoreCreateBinary();
     xSemaphore_Exit_Res = xSemaphoreCreateBinary();

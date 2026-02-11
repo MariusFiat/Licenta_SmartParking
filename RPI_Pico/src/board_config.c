@@ -33,5 +33,5 @@ void init_board(){
     #else
         init_board_normal();
     #endif
-    printf("%s", "The board was initialized!\n");
+    //printf("%s", "The board was initialized!\n");
 }

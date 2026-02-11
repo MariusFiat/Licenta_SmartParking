@@ -44,7 +44,7 @@ static void setServo(int servoPin1, int servoPin2, float startMillis){
 
 // Barrier's states
 typedef enum {
-    BARRIER_IDLE,
+    BARRIER_IDLE = 0,
     BARRIER_MOVING
 } BarrierState_t;
 
@@ -55,18 +55,26 @@ static bool dirEntry;
 static BarrierState_t exitState = BARRIER_IDLE;
 static int currentExitPos = SERVO_MIN;
 static bool dirExit;
+static ServoMessage_t entryServo = {false, false};
+static ServoMessage_t exitServo = {false, false};
 
 void servo_task(void* pvParams) {
     (void) pvParams;
     setServo(PWM_BARRIER_ENTRY, PWM_BARRIER_EXIT, SERVO_MIN);
-    
-    // TEST
-    entryState = BARRIER_MOVING;
-    exitState = BARRIER_MOVING;
-    dirEntry = true;
-    dirExit = true;
 
     while(true) {
+
+        xQueueReceive(xQueue_Servo_Entry, &entryServo, 0);
+        xQueueReceive(xQueue_Servo_Exit, &exitServo, 0);
+
+        entryState = entryServo.state;
+        dirEntry = entryServo.dir;
+        exitState = exitServo.state;
+        dirExit = exitServo.dir;
+
+        //printf("Am primit in servo din Queue_Servo_Entry -> %d %d\n", entryState, dirEntry);
+        //printf("Am primit in servo din Queue_Servo_Exit -> %d %d\n", exitState, dirExit);
+
         // Entry barrier
         if (entryState == BARRIER_MOVING) {
             if (dirEntry) {
@@ -104,6 +112,6 @@ void servo_task(void* pvParams) {
         }
 
 
-        vTaskDelay(pdMS_TO_TICKS(BARRIER_SPEED)); // Barrier speed
+        vTaskDelay(pdMS_TO_TICKS(10)); // Barrier speed
     }
 }
