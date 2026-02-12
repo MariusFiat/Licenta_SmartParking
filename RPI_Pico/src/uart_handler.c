@@ -17,12 +17,14 @@ static bool readEntryResponseDone = false;
 static char command_Entry[COMMAND_LENGTH + 1];
 static bool readExitResponseDone = false;
 static char command_Exit[COMMAND_LENGTH + 1];
+static ServoMessage_t entryServo = {false, false};
+static ServoMessage_t exitServo = {false, false};
 
 void uart_handler(void* pvParams){
     (void) pvParams;
 
     while(1){
-        printf("%s\n", "The uart task is running!");
+        //printf("%s\n", "The uart task is running!");
         checkEntryRequest();
         checkExitRequest();
         route_message_from_rpi5();
@@ -46,14 +48,23 @@ static void checkEntryRequest(){
             
             if(readEntryResponseDone){
                 if(strstr(command_Entry, "ENA") != NULL){
-                    printf("Entry access allowed!\n");
+                    //printf("Entry access allowed!\n");
                     
                     /* Write in the Servo_Queue. Send the open command for the entry. */
+                    entryServo.state = true;
+                    entryServo.dir = true;
+                    xQueueSend(xQueue_Servo_Entry, &entryServo, 0);
 
                 }else{
-                    printf("Entry access denied!\n");
+                    //printf("Entry access denied!\n");
                     /* The barrier remain closed. The detect_entry task will be resumed. */
+
+                    entryServo.state = true;
+                    entryServo.dir = false;
+                    xQueueSend(xQueue_Servo_Entry, &entryServo, 0);
                 }
+                command_Entry[0] = 0;
+                readEntryResponseDone = false;
 
                 lastEntryRead = false;
                 xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
@@ -65,10 +76,10 @@ static void checkEntryRequest(){
             xQueueReceive(xQueue_Entry_Req, &sensorStateReceived, 0); /* Read the state of the entry sensor. */
 
             if(sensorStateReceived == false){
-                printf("Received in the uart_handler task from entry -> %d\n", sensorStateReceived);
+                //printf("Received in the uart_handler task from entry -> %d\n", sensorStateReceived);
 
             } else if(sensorStateReceived == true){
-                printf("%s\n", "The detect entry task is blocked");
+                //printf("%s\n", "The detect entry task is blocked");
                 lastEntryRead = true;
                 xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
 
@@ -90,13 +101,21 @@ static void checkExitRequest(){
 
         if(readExitResponseDone){
             if(strstr(command_Exit, "EXA") != NULL){
-                printf("Exit access allowed!\n");
+                //printf("Exit access allowed!\n");
 
                 /* Write in the Servo_Queue */
+                exitServo.state = true;
+                exitServo.dir = true;
+                xQueueSend(xQueue_Servo_Exit, &exitServo, 0);
             }
             else{
-                printf("Exit access denied!\n");
+                //printf("Exit access denied!\n");
+                exitServo.state = true;
+                exitServo.dir = false;
+                xQueueSend(xQueue_Servo_Exit, &exitServo, 0);
             }
+            command_Exit[0] = 0;
+            readExitResponseDone = false;
 
             lastExitRead = false;
             xSemaphoreGive(xSemaphore_Exit_Res);
@@ -106,10 +125,10 @@ static void checkExitRequest(){
         xQueueReceive(xQueue_Exit_Req, &sensorStateReceived, 0);
 
         if(sensorStateReceived == false){
-            printf("Received in the uart_handler task from exit -> %d\n", sensorStateReceived);
+            //printf("Received in the uart_handler task from exit -> %d\n", sensorStateReceived);
         }
         else if(sensorStateReceived == true){
-            printf("The detect exit task is blocked!\n");
+            //printf("The detect exit task is blocked!\n");
             lastExitRead = true;
             xSemaphoreTake(xSemaphore_Exit_Res, 0);
 
@@ -120,34 +139,28 @@ static void checkExitRequest(){
     }
 }
 
-static bool read_user_data(char *out_buffer) {
+static bool read_user_data(char* out_buffer) {
     static char internal_buffer[COMMAND_LENGTH + 1];
     static int current_idx = 0;
 
     int c = getchar_timeout_us(0);
 
-
-    if (c != PICO_ERROR_TIMEOUT) {
-        if (c >= 32 && c <= 126) { 
-            internal_buffer[current_idx++] = (char)c;
-        }
-
-        if (current_idx == COMMAND_LENGTH) {
-            internal_buffer[COMMAND_LENGTH] = '\0';
-            
-            for(int i = 0; i < COMMAND_LENGTH; i++) {
-                out_buffer[i] = internal_buffer[i];
+    while (c != PICO_ERROR_TIMEOUT) {
+        if (c == '\r' || c == '\n') {
+            if (current_idx > 0) {
+                internal_buffer[current_idx] = '\0';
+                strcpy(out_buffer, internal_buffer);
+                current_idx = 0;
+                return true; 
             }
-
-            current_idx = 0;
-            printf("\n[System] RPI5 send: %s\n", out_buffer);
-            while(getchar_timeout_us(0) != PICO_ERROR_TIMEOUT); /*Clear the bufer */
-
-            return true; 
         }
+        else if (c >= 32 && c <= 126 && current_idx < COMMAND_LENGTH) {
+            internal_buffer[current_idx++] = (char)c;
+            putchar(c);
+        }
+        
+        c = getchar_timeout_us(0);
     }
-
-
     return false;
 }
 
@@ -155,9 +168,7 @@ static void route_message_from_rpi5(){
     static char command[COMMAND_LENGTH + 1];
     static bool readStatus = false;
     
-        vTaskSuspendAll();
         readStatus = read_user_data(command);
-        xTaskResumeAll();
 
     if(readStatus){
         if(strstr(command, "EN")){

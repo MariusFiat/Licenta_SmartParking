@@ -8,11 +8,14 @@
 #include "detect.h"
 #include "board_config.h"
 #include "shared_resources.h"
-#include "uart_handler.c"
+#include "uart_handler.h"
+#include "servo.h"
 
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/
 QueueHandle_t xQueue_Exit_Req = NULL;
+QueueHandle_t xQueue_Servo_Entry = NULL;
+QueueHandle_t xQueue_Servo_Exit = NULL;
 
 /* Init semaphores */
 SemaphoreHandle_t xSemaphore_Entry_Res = NULL;
@@ -24,6 +27,8 @@ int main()
 
     xQueue_Entry_Req = xQueueCreate(QUEUE_ENTRY_REQ_LENGTH, sizeof(bool));
     xQueue_Exit_Req = xQueueCreate(QUEUE_EXIT_REQ_LENGTH, sizeof(bool));
+    xQueue_Servo_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+    xQueue_Servo_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
 
     xSemaphore_Entry_Res = xSemaphoreCreateBinary();
     xSemaphore_Exit_Res = xSemaphoreCreateBinary();
@@ -32,6 +37,7 @@ int main()
     xTaskCreate(detect_entry, "Detetect_Entry", 256, NULL, 1, NULL);
     xTaskCreate(detect_exit, "Detect_Exit", 256, NULL, 1, NULL);
     xTaskCreate(uart_handler, "UART_handler", 256, NULL, 1, NULL);
+    xTaskCreate(servo_task, "Servo_Task", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
     printf("%s", "FreeRTOS has run out of RAM memory!");
