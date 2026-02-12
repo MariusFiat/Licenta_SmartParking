@@ -38,6 +38,7 @@ static void checkEntryRequest(){
     static bool sensorStateReceived = false;
     static bool lastEntryRead = false;
     static int received_Response;
+    static bool requestSent = false;
 
     static int i = 0;
 
@@ -66,6 +67,7 @@ static void checkEntryRequest(){
                 command_Entry[0] = 0;
                 readEntryResponseDone = false;
 
+                requestSent = false;
                 lastEntryRead = false;
                 xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
                 vTaskDelay(pdMS_TO_TICKS(100));
@@ -78,13 +80,14 @@ static void checkEntryRequest(){
             if(sensorStateReceived == false){
                 //printf("Received in the uart_handler task from entry -> %d\n", sensorStateReceived);
 
-            } else if(sensorStateReceived == true){
+            } else if(sensorStateReceived == true && requestSent == false){
                 //printf("%s\n", "The detect entry task is blocked");
                 lastEntryRead = true;
+                requestSent = true;
                 xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
 
                 /* Send the command on uart to the RPI5. The RPI5 will start the car plate detection stage and will replay with the result. */
-
+                printf("A");
             }
         }
 }
@@ -92,7 +95,7 @@ static void checkEntryRequest(){
 static void checkExitRequest(){
     static bool sensorStateReceived = false;
     static bool lastExitRead = false;
-
+    static bool requestSent = false;
 
     if(lastExitRead == true){
         /* Send signal to the python script */
@@ -117,6 +120,7 @@ static void checkExitRequest(){
             command_Exit[0] = 0;
             readExitResponseDone = false;
 
+            requestSent = false;
             lastExitRead = false;
             xSemaphoreGive(xSemaphore_Exit_Res);
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -127,12 +131,14 @@ static void checkExitRequest(){
         if(sensorStateReceived == false){
             //printf("Received in the uart_handler task from exit -> %d\n", sensorStateReceived);
         }
-        else if(sensorStateReceived == true){
+        else if(sensorStateReceived == true && requestSent == false){
             //printf("The detect exit task is blocked!\n");
             lastExitRead = true;
+            requestSent = true;
             xSemaphoreTake(xSemaphore_Exit_Res, 0);
 
             /* Send cmd to the RPI5 for processing the exit. */
+            printf("B");
         }else{
             /* Do nothing */
         }
@@ -156,10 +162,9 @@ static bool read_user_data(char* out_buffer) {
         }
         else if (c >= 32 && c <= 126 && current_idx < COMMAND_LENGTH) {
             internal_buffer[current_idx++] = (char)c;
-            putchar(c);
         }
         
-        c = getchar_timeout_us(0);
+        c = getchar_timeout_us(50);
     }
     return false;
 }
@@ -180,4 +185,5 @@ static void route_message_from_rpi5(){
             strcpy(command_Exit, command);
         }
     }
+    memset(command, 0, sizeof(command));
 }

@@ -38,10 +38,10 @@ void detect_entry(void* params){
             xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
 
             /* Delay to simulate that the barrier waits */
-            vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
+            //vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
 
-            ServoMessage_t closeMessage = {true, false};
-            xQueueSend(xQueue_Servo_Entry, &closeMessage, 0);
+            // ServoMessage_t closeMessage = {true, false};
+            // xQueueSend(xQueue_Servo_Entry, &closeMessage, 0);
 
         } else {
             #if USE_PICO_WH == 1
@@ -73,10 +73,10 @@ void detect_exit(void* params){
             xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
 
             /* Delay to simulate that the barrier waits */
-            vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
+            //vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
 
-            ServoMessage_t closeMessage = {true, false};
-            xQueueSend(xQueue_Servo_Exit, &closeMessage, 0);
+            // ServoMessage_t closeMessage = {true, false};
+            // xQueueSend(xQueue_Servo_Exit, &closeMessage, 0);
         }
         else{
             /* Do nothing. */
