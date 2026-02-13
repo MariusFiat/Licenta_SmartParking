@@ -56,6 +56,12 @@ static void checkEntryRequest(){
                     entryServo.dir = true;
                     xQueueSend(xQueue_Servo_Entry, &entryServo, 0);
 
+                    /* Unlock the safety task semaphore for entry*/
+                    xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
+                    
+                    // /* Block the detection for entry. */
+                    // xSemaphoreTake(xSemaphore_Entry_Res, 0);
+
                 }else{
                     //printf("Entry access denied!\n");
                     /* The barrier remain closed. The detect_entry task will be resumed. */
@@ -63,13 +69,14 @@ static void checkEntryRequest(){
                     entryServo.state = true;
                     entryServo.dir = false;
                     xQueueSend(xQueue_Servo_Entry, &entryServo, 0);
+                    //xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
                 }
                 command_Entry[0] = 0;
                 readEntryResponseDone = false;
 
                 requestSent = false;
                 lastEntryRead = false;
-                xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
+                xQueueReset(xQueue_Entry_Req);
                 vTaskDelay(pdMS_TO_TICKS(100));
             }
         }
@@ -79,6 +86,9 @@ static void checkEntryRequest(){
 
             if(sensorStateReceived == false){
                 //printf("Received in the uart_handler task from entry -> %d\n", sensorStateReceived);
+
+                /* Block the semaphore for the barrier safety task. I want to be able to detect a car when it comes. */
+                // xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0);
 
             } else if(sensorStateReceived == true && requestSent == false){
                 //printf("%s\n", "The detect entry task is blocked");
@@ -110,6 +120,9 @@ static void checkExitRequest(){
                 exitServo.state = true;
                 exitServo.dir = true;
                 xQueueSend(xQueue_Servo_Exit, &exitServo, 0);
+
+                /* Release the semaphore for the barrier safety task. I want to be able to check if the car is still in the barrier's area. */
+                xSemaphoreGive(xSemaphore_Barrier_Safety_Exit);
             }
             else{
                 //printf("Exit access denied!\n");
@@ -122,17 +135,17 @@ static void checkExitRequest(){
 
             requestSent = false;
             lastExitRead = false;
-            xSemaphoreGive(xSemaphore_Exit_Res);
+            xQueueReset(xQueue_Exit_Req);
+            //xSemaphoreGive(xSemaphore_Exit_Res);
             vTaskDelay(pdMS_TO_TICKS(100));
         }
     } else if(lastExitRead == false){
         xQueueReceive(xQueue_Exit_Req, &sensorStateReceived, 0);
 
         if(sensorStateReceived == false){
-            //printf("Received in the uart_handler task from exit -> %d\n", sensorStateReceived);
+
         }
         else if(sensorStateReceived == true && requestSent == false){
-            //printf("The detect exit task is blocked!\n");
             lastExitRead = true;
             requestSent = true;
             xSemaphoreTake(xSemaphore_Exit_Res, 0);
