@@ -45,7 +45,8 @@ static void setServo(int servoPin1, int servoPin2, float startMillis){
 // Barrier's states
 typedef enum {
     BARRIER_IDLE = 0,
-    BARRIER_MOVING
+    BARRIER_MOVING,
+    BARRIER_BLOCKED
 } BarrierState_t;
 
 static BarrierState_t entryState = BARRIER_IDLE;
@@ -57,23 +58,26 @@ static int currentExitPos = SERVO_MIN;
 static bool dirExit;
 static ServoMessage_t entryServo = {false, false};
 static ServoMessage_t exitServo = {false, false};
+static ServoMessage_t entrySafetyState = {false, false};
+static ServoMessage_t exitSafetyState = {false, false};
+static bool lastEntryState = false;
+static bool lastExitState = false;
 
 void servo_task(void* pvParams) {
     (void) pvParams;
     setServo(PWM_BARRIER_ENTRY, PWM_BARRIER_EXIT, SERVO_MIN);
 
     while(true) {
+            if(xQueueReceive(xQueue_Servo_Entry, &entryServo, 0) == pdPASS){
+                entryState = entryServo.state;
+                dirEntry = entryServo.dir;
+            }
 
-        xQueueReceive(xQueue_Servo_Entry, &entryServo, 0);
-        xQueueReceive(xQueue_Servo_Exit, &exitServo, 0);
-
-        entryState = entryServo.state;
-        dirEntry = entryServo.dir;
-        exitState = exitServo.state;
-        dirExit = exitServo.dir;
-
-        //printf("Am primit in servo din Queue_Servo_Entry -> %d %d\n", entryState, dirEntry);
-        //printf("Am primit in servo din Queue_Servo_Exit -> %d %d\n", exitState, dirExit);
+        
+            if(xQueueReceive(xQueue_Servo_Exit, &exitServo, 0) == pdPASS){
+                exitState = exitServo.state;
+                dirExit = exitServo.dir;
+            }
 
         // Entry barrier
         if (entryState == BARRIER_MOVING) {
@@ -81,16 +85,29 @@ void servo_task(void* pvParams) {
                 currentEntryPos += SERVO_STEP;
                 if (currentEntryPos >= SERVO_MAX) {
                     currentEntryPos = SERVO_MAX;
-                    entryState = BARRIER_IDLE;
+                    entryState = BARRIER_BLOCKED;
+                    entrySafetyState.state = false;
                 }
             } else {
                 currentEntryPos -= SERVO_STEP;
                 if (currentEntryPos <= SERVO_MIN) {
                     currentEntryPos = SERVO_MIN;
                     entryState = BARRIER_IDLE;
+
+                    lastEntryState = false;
                 }
             }
             setMillis(PWM_BARRIER_ENTRY, currentEntryPos);
+        } 
+        else if(entryState == BARRIER_BLOCKED){
+            /* Wait status from the barrier safety task*/
+
+            xQueueReceive(xQueue_Servo_Safety_Entry, &entrySafetyState, 0);
+
+            if(entrySafetyState.state){
+                entryState = BARRIER_MOVING;
+                dirEntry = false;
+            }
         }
 
         //Exit barrier
@@ -99,7 +116,8 @@ void servo_task(void* pvParams) {
                 currentExitPos += SERVO_STEP;
                 if(currentExitPos >= SERVO_MAX){
                     currentExitPos = SERVO_MAX;
-                    exitState = BARRIER_IDLE;
+                    exitState = BARRIER_BLOCKED;
+                    exitSafetyState.state = false;
                 }
             }else{
                 currentExitPos -= SERVO_STEP;
@@ -109,6 +127,14 @@ void servo_task(void* pvParams) {
                 }
             }
             setMillis(PWM_BARRIER_EXIT, currentExitPos);
+        } 
+        else if(exitState == BARRIER_BLOCKED){
+            xQueueReceive(xQueue_Servo_Safety_Exit, &exitSafetyState, 0);
+
+            if(exitSafetyState.state){
+                exitState = BARRIER_MOVING;
+                dirExit = false;
+            }
         }
 
 

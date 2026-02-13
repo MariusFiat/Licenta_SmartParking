@@ -6,6 +6,7 @@ add_executable(${PROJECT_NAME}
     detect.c
     uart_handler.c
     servo.c
+    barrier_safety.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
