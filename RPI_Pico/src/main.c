@@ -11,6 +11,7 @@
 #include "uart_handler.h"
 #include "servo.h"
 #include "barrier_safety.h"
+#include "lights_controller.h"
 
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/
@@ -56,6 +57,7 @@ int main()
     xTaskCreate(detect_exit, "Detect_Exit", 256, NULL, 1, NULL);
     xTaskCreate(uart_handler, "UART_handler", 256, NULL, 1, NULL);
     xTaskCreate(servo_task, "Servo_Task", 256, NULL, 1, NULL);
+    xTaskCreate(lights_controller_task, "Lights_Controller", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
     printf("%s", "FreeRTOS has run out of RAM memory!");
