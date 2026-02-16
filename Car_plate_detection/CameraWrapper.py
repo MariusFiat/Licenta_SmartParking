@@ -1,7 +1,6 @@
 import cv2
 from picamera2 import Picamera2
 from libcamera import controls
-from yolo4 import plateRecognition
 
 # 1. Definim un "pseudo-cap" care are metoda .read()
 class CameraWrapper:
@@ -28,13 +27,3 @@ class CameraWrapper:
 
     def release(self):
         self.picam2.stop()
-
-# 2. Inițializăm Wrapper-ul
-cap = CameraWrapper()
-
-# 3. Acum metoda ta veche va funcționa fără nicio modificare!
-print("Pornire detecție...")
-myPlate = plateRecognition(cap, "left")
-
-print(f"Rezultat: {myPlate}")
-cap.release()

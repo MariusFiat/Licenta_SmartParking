@@ -11,6 +11,11 @@
 #define PWM_BARRIER_ENTRY 16 
 #define PWM_BARRIER_EXIT 17
 
+#define I2C_PORT i2c1
+#define I2C_SDA_LIGHTS 14
+#define I2C_SCL_LIGHTS 15
+#define PCF_0_ADDR 0x38
+
 /* Messages lengths and format. 
     ENAXXX = Entry allowed slot number XXX
     END000 = Entry denied

@@ -6,6 +6,8 @@ add_executable(${PROJECT_NAME}
     detect.c
     uart_handler.c
     servo.c
+    barrier_safety.c
+    lights_controller.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
@@ -30,6 +32,7 @@ target_link_libraries(${PROJECT_NAME}
     pico_stdlib
     pico_cyw43_arch_none
     hardware_pwm
+    hardware_i2c
 )
 
 # Activăm output-ul pe USB ca să vedem printf()

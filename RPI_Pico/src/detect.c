@@ -37,18 +37,15 @@ void detect_entry(void* params){
             xQueueSend(xQueue_Entry_Req, &object_detected, 0);
             xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
 
-            /* Delay to simulate that the barrier waits */
-            vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
-
-            ServoMessage_t closeMessage = {true, false};
-            xQueueSend(xQueue_Servo_Entry, &closeMessage, 0);
+            // /* Block the detection until the car leave from the barrier area. */
+            vTaskDelay(pdMS_TO_TICKS(500));
 
         } else {
             #if USE_PICO_WH == 1
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             #endif
             /* Do nothing. */
-            xQueueSend(xQueue_Entry_Req, &object_detected, 0);
+            //xQueueSend(xQueue_Entry_Req, &object_detected, 0);
         }
 
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
@@ -72,11 +69,10 @@ void detect_exit(void* params){
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
             xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
 
-            /* Delay to simulate that the barrier waits */
-            vTaskDelay(pdMS_TO_TICKS(3000)); /* Give 3 second before barrier close. */
-
-            ServoMessage_t closeMessage = {true, false};
-            xQueueSend(xQueue_Servo_Exit, &closeMessage, 0);
+            // /* Semaphore for closing sync. The timer that starts at barrier opening will block this semaphore
+            //     [..] and will release it after the car leave. Same approach on the both sides.
+            // */
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
         else{
             /* Do nothing. */
