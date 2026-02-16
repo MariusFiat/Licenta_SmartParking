@@ -58,18 +58,10 @@ static void checkEntryRequest(){
 
                     /* Unlock the safety task semaphore for entry*/
                     xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
-                    
-                    // /* Block the detection for entry. */
-                    // xSemaphoreTake(xSemaphore_Entry_Res, 0);
 
                 }else{
-                    //printf("Entry access denied!\n");
-                    /* The barrier remain closed. The detect_entry task will be resumed. */
-
-                    entryServo.state = true;
-                    entryServo.dir = false;
-                    xQueueSend(xQueue_Servo_Entry, &entryServo, 0);
-                    //xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
+                    /* The barrier remains closed.*/
+                    xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
                 }
                 command_Entry[0] = 0;
                 readEntryResponseDone = false;
@@ -82,22 +74,20 @@ static void checkEntryRequest(){
         }
         else if(lastEntryRead == false){ /* If there was not detected any obstacle, than run normally. */
             
-            xQueueReceive(xQueue_Entry_Req, &sensorStateReceived, 0); /* Read the state of the entry sensor. */
+            if(xQueueReceive(xQueue_Entry_Req, &sensorStateReceived, 0) == pdTRUE){ /* Read the entry sensor state, check if there are any detections in the queue. If not, do nothing*/
 
-            if(sensorStateReceived == false){
-                //printf("Received in the uart_handler task from entry -> %d\n", sensorStateReceived);
+                /* Read the state of the entry sensor. */
+                if(sensorStateReceived == true && requestSent == false){
+                    //printf("%s\n", "The detect entry task is blocked");
+                    lastEntryRead = true;
+                    requestSent = true;
+                    xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
 
-                /* Block the semaphore for the barrier safety task. I want to be able to detect a car when it comes. */
-                // xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0);
-
-            } else if(sensorStateReceived == true && requestSent == false){
-                //printf("%s\n", "The detect entry task is blocked");
-                lastEntryRead = true;
-                requestSent = true;
-                xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
-
-                /* Send the command on uart to the RPI5. The RPI5 will start the car plate detection stage and will replay with the result. */
-                printf("A");
+                    /* Send the command on uart to the RPI5. The RPI5 will start the car plate detection stage and will replay with the result. */
+                    printf("A");
+                }else{
+                    /* Do nothing. */
+                }
             }
         }
 }
@@ -126,9 +116,8 @@ static void checkExitRequest(){
             }
             else{
                 //printf("Exit access denied!\n");
-                exitServo.state = true;
-                exitServo.dir = false;
-                xQueueSend(xQueue_Servo_Exit, &exitServo, 0);
+                /* The barrier remains closed. */
+                xSemaphoreGive(xSemaphore_Exit_Res); /* Wake-up the detect exit task. */
             }
             command_Exit[0] = 0;
             readExitResponseDone = false;
@@ -136,24 +125,22 @@ static void checkExitRequest(){
             requestSent = false;
             lastExitRead = false;
             xQueueReset(xQueue_Exit_Req);
-            //xSemaphoreGive(xSemaphore_Exit_Res);
             vTaskDelay(pdMS_TO_TICKS(100));
         }
     } else if(lastExitRead == false){
-        xQueueReceive(xQueue_Exit_Req, &sensorStateReceived, 0);
+        if(xQueueReceive(xQueue_Exit_Req, &sensorStateReceived, 0) == pdTRUE){
+            /* Check if there are any sensors activated in the queue for exit side.*/
 
-        if(sensorStateReceived == false){
+            if(sensorStateReceived == true && requestSent == false){
+                lastExitRead = true;
+                requestSent = true;
+                xSemaphoreTake(xSemaphore_Exit_Res, 0);
 
-        }
-        else if(sensorStateReceived == true && requestSent == false){
-            lastExitRead = true;
-            requestSent = true;
-            xSemaphoreTake(xSemaphore_Exit_Res, 0);
-
-            /* Send cmd to the RPI5 for processing the exit. */
-            printf("B");
-        }else{
-            /* Do nothing */
+                /* Send cmd to the RPI5 for processing the exit. */
+                printf("B");
+            }else{
+                /* Do nothing */
+            }
         }
     }
 }
@@ -190,12 +177,12 @@ static void route_message_from_rpi5(){
 
     if(readStatus){
         if(strstr(command, "EN")){
-            readEntryResponseDone = readStatus;
             strcpy(command_Entry, command);
+            readEntryResponseDone = readStatus;
         }
         else if(strstr(command, "EX")){
-            readExitResponseDone = readStatus;
             strcpy(command_Exit, command);
+            readExitResponseDone = readStatus;
         }
     }
     memset(command, 0, sizeof(command));
