@@ -21,21 +21,20 @@ void barrier_safety_check(void* pvParams){
     }
 }
 
-void checkEntry(){
-    if(xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0) == pdTRUE){
-            bool is_car_still_there = !gpio_get(ENTRY_SENSOR);
+void checkEntry() {
+    if (xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0) == pdTRUE) {
+        
+        bool is_car_still_there = !gpio_get(ENTRY_SENSOR);
 
-        if(is_car_still_there){
-            /* The car is still in the entry zone. */
-            // xTimerChangePeriod(xTimer_Barrier_Entry, pdMS_TO_TICKS(1000), 0);
-            // xTimerStart(xTimer_Barrier_Entry, 0);
+        if (is_car_still_there) {
+            /* Do nothing */
+
+            xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
         } else {
             ServoMessage_t closeMsg = {true, false};
             xQueueSend(xQueue_Servo_Safety_Entry, &closeMsg, 0);
-            xQueueReset(xQueue_Entry_Req);
 
             xQueueReset(xQueue_Entry_Req);
-            
             xSemaphoreGive(xSemaphore_Entry_Res);
         }
     }
@@ -46,9 +45,9 @@ void checkExit(){
          bool is_car_still_there = !gpio_get(EXIT_SENSOR);
 
         if(is_car_still_there){
-            /* The car is still in the exit zone. */
-            // xTimerChangePeriod(xTimer_Barrier_Exit, pdMS_TO_TICKS(1000), 0);
-            // xTimerStart(xTimer_Barrier_Entry, 0);
+            /* The car is still in the barrier area. Do nothing. */
+            
+            xSemaphoreGive(xSemaphore_Barrier_Safety_Exit);
         }else{
             ServoMessage_t closeMsg = {true, false};
             xQueueReset(xQueue_Exit_Req);

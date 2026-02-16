@@ -102,11 +102,11 @@ void servo_task(void* pvParams) {
         else if(entryState == BARRIER_BLOCKED){
             /* Wait status from the barrier safety task*/
 
-            xQueueReceive(xQueue_Servo_Safety_Entry, &entrySafetyState, 0);
-
-            if(entrySafetyState.state){
-                entryState = BARRIER_MOVING;
-                dirEntry = false;
+            if(xQueueReceive(xQueue_Servo_Safety_Entry, &entrySafetyState, 0) == pdTRUE){
+                if(entrySafetyState.state){
+                    entryState = BARRIER_MOVING;
+                    dirEntry = false;
+                }
             }
         }
 
@@ -129,11 +129,12 @@ void servo_task(void* pvParams) {
             setMillis(PWM_BARRIER_EXIT, currentExitPos);
         } 
         else if(exitState == BARRIER_BLOCKED){
-            xQueueReceive(xQueue_Servo_Safety_Exit, &exitSafetyState, 0);
-
-            if(exitSafetyState.state){
-                exitState = BARRIER_MOVING;
-                dirExit = false;
+            if(xQueueReceive(xQueue_Servo_Safety_Exit, &exitSafetyState, 0) == pdTRUE){
+                
+                if(exitSafetyState.state){
+                    exitState = BARRIER_MOVING;
+                    dirExit = false;
+                }
             }
         }
 
