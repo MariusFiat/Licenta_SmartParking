@@ -5,11 +5,16 @@ import cv2
 import sys
 import os
 import serial
+import sys
 
 from CameraWrapper import CameraWrapper
 from yolo4 import plateRecognition
 from checkplates import check_license_plate
 from queue import Queue
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from Database_Scripts.supabase_base_functions import check_plate_into_db
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -51,10 +56,15 @@ def detectSide(side):
         print("[System] Entry request (A)")
         plateNumber = plateRecognition(cap, "left")
         result = check_license_plate(plateNumber)
-                
-        ser.write("ENA000\n".encode('utf-8'))
-        ser.flush()
-        print("Sent catre Pico: ENA000")
+        
+        if result == True and check_plate_into_db(plateNumber) == True:
+            ser.write("ENA000\n".encode('utf-8'))
+            ser.flush()
+            print("Sent catre Pico: ENA000")
+        else:
+            ser.write("END000\n".encode('utf-8'))
+            ser.flush()
+            print("Sent catre Pico: END000")
     else:
         print("[System] Exit request (B)")
         plateNumber = plateRecognition(cap, "right")
