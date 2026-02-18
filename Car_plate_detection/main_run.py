@@ -14,7 +14,7 @@ from queue import Queue
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from Database_Scripts.supabase_base_functions import check_plate_into_db
+from Database_Scripts.supabase_base_functions import check_plate_in_the_reservation_table
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -57,14 +57,25 @@ def detectSide(side):
         plateNumber = plateRecognition(cap, "left")
         result = check_license_plate(plateNumber)
         
-        if result == True and check_plate_into_db(plateNumber) == True:
-            ser.write("ENA000\n".encode('utf-8'))
-            ser.flush()
-            print("Sent catre Pico: ENA000")
+        if result == True:
+            slot = check_plate_in_the_reservation_table(plateNumber)
+            if slot != -1:
+                #Create the response message with the parking_slot 
+                command = f"ENA{slot:03d}\n"
+                
+                # Send the command
+                ser.write(command.encode('utf-8'))
+                ser.flush()
+    
+                print(f"Sent to pico: {command.strip()}")
+            else:
+                ser.write("END000\n".encode('utf-8'))
+                ser.flush()
+                print("Sent to Pico: END000. Permission denied!")
         else:
             ser.write("END000\n".encode('utf-8'))
             ser.flush()
-            print("Sent catre Pico: END000")
+            print("Sent catre Pico: END000. Invalid number")
     else:
         print("[System] Exit request (B)")
         plateNumber = plateRecognition(cap, "right")
