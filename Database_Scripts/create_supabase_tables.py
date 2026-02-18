@@ -63,6 +63,7 @@ def create_reservation_table(conn, cur):
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES user_details(id) ON DELETE CASCADE,
             car_plate TEXT NOT NULL,
+            slot INTEGER NOT NULL,
             status TEXT NOT NULL,
             tax DOUBLE PRECISION,
             entry_timestamp TIMESTAMP,
@@ -98,6 +99,19 @@ def create_car_table(conn, cur):
         
         print("The table 'car' was created succesfully!")
 
+def insert_reserved_unknown_user_id(conn, cur):
+    insert_query = """
+            INSERT INTO user_details (
+                id, first_name, last_name, subscription_type
+            )
+            VALUES (%s, %s, %s, %s);
+    """
+    record_to_insert = (0, 'unknown', 'unknown', 'STANDARD')
+    cur.execute(insert_query, record_to_insert)
+    conn.commit()
+
+    print("The unknown reserved user was added!")
+
 def create_database_tables():
     try:
         # DB connection
@@ -109,6 +123,7 @@ def create_database_tables():
         create_reservation_table(conn, cur)
         create_parking_details_table(conn, cur)
         create_slots_table(conn, cur)
+        insert_reserved_unknown_user_id(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
