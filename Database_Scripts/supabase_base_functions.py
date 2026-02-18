@@ -24,7 +24,9 @@ def check_plate_into_db(plate):
         return check_plate_status_and_subscription_type(result) #Check the plate to see if this car plate is booked or it's just a simple customer that wants to park
     else:
         print(f"Unknown car")
-        return False
+        #Add the car to the parking db and set the NO_SUBSCRIPTION status
+        #At the exit, this plate will have to pay the tax
+        return insert_new_car(plate, 0, 1, 'STATUS_PARKED', 'NO_SUBSCRIPTION', 0)
 
 def check_plate_status_and_subscription_type(result):
     if result:
@@ -41,10 +43,6 @@ def check_plate_status_and_subscription_type(result):
     if subscription_type == 'EMPLOYEE':
         #No taxes for this car and there is nothing to do, let the car to enter
         return update_car_status(plate, 'STATUS_PARKED')
-    else:
-        #Add the car to the parking db and set the NO_SUBSCRIPTION status
-        #At the exit, this plate will have to pay the tax
-        return insert_new_car(plate, NULL, 1, 'STATUS_PARKED', 'NO_SUBSCRIPTION', 0)
 
 
 def insert_new_car(car_plate, id_owner, parking_slot, status, subscription_type, parking_tax):
@@ -97,7 +95,11 @@ def update_car_status(car_plate, new_status):
             return False
         else:
             conn.commit()
-            print(f"The status of the car: {car_plate} was updated in: {new_status}")
+            result = cur.fetchone()
+            if result[4] == 'STATUS_PARKED':
+                print(f"The car with the plate: {car_plate} is already in the parking.")
+            else:
+                print(f"The status of the car: {car_plate} was updated in: {new_status}")
 
     except Exception as e:
         print(f"Eroare la update: {e}")

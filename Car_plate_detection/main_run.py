@@ -78,6 +78,9 @@ def detectSide(side):
 def main():
     print("\nStarting parking recognition service...")
 
+    #Daemon threads for db updates?
+    #Calculate the tax until now for each car
+    #Update some expired slot bookings
     serial_handler()
     
 main()
