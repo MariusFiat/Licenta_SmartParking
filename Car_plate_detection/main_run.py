@@ -5,12 +5,12 @@ import cv2
 import sys
 import os
 import serial
-import sys
 
 from CameraWrapper import CameraWrapper
 from yolo4 import plateRecognition
 from checkplates import check_license_plate
 from queue import Queue
+from threading import *
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
