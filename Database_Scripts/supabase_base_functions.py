@@ -209,3 +209,37 @@ def detect_an_employee_parking_slot():
 
 def release_the_parking_slot():
     #To be implemented
+    return 1
+
+def get_reservations(conn, cur):
+    query = "SELECT * FROM reservation"
+    cur.execute(query)
+
+    return cur.fetchall()
+
+def get_parking_pricing(conn, cur):
+    query = "SELECT pricing FROM parking_details"
+    cur.execute(query)
+    return cur.fetchone()
+
+def set_reservation_tax(conn, cur, id, tax):
+    query = """
+        UPDATE reservation SET tax = %s WHERE id = %s;
+    """
+    cur.execute(query, (tax, id))
+    conn.commit()
+
+def calculate_the_taxes():
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
+
+    #Get all reservations
+    reservations = get_reservations(conn, cur)
+    parking_pricing = get_parking_pricing(conn, cur)
+
+    #For each check the subcription_type
+    for res in reservations:
+        owner = get_user_details(res[1])
+        if owner[3] == 'STANDARD':
+            set_reservation_tax(conn, cur, res[0], res[5] + parking_pricing[0])
+        
