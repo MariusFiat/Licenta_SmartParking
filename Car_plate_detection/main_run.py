@@ -15,6 +15,7 @@ from queue import Queue
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Database_Scripts.supabase_base_functions import check_plate_in_the_reservation_table
+from Database_Scripts.supabase_base_functions import check_exit_status
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -80,10 +81,23 @@ def detectSide(side):
         print("[System] Exit request (B)")
         plateNumber = plateRecognition(cap, "right")
         result = check_license_plate(plateNumber)
-                
-        ser.write("EXA000\n".encode('utf-8'))
-        ser.flush()
-        print("Sent to Pico: EXA000")
+
+        if result == True:
+            status = check_exit_status(plateNumber)
+
+            if status == True:    
+                ser.write("EXA000\n".encode('utf-8'))
+                ser.flush()
+                print("Sent to Pico: EXA000")
+            else:
+                ser.write("EXD000\n".encode('utf-8'))
+                ser.flush()
+                print("Sent to Pico: EXD000")
+        else:
+            #Incorrect detection
+            ser.write("EXD000\n".encode('utf-8'))
+            ser.flush()
+            print("Sent to Pico: EXD000.")
 
 
 def main():

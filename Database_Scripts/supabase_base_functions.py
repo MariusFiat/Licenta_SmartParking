@@ -164,6 +164,41 @@ def set_the_entry_time(car_plate):
     return True
 
 
+#Exit logic:
+def check_exit_status(plate):
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
+
+    #Get the reservation for this plate
+    query = "SELECT * FROM reservation WHERE car_plate = %s;"
+    cur.execute(query, (plate,))
+    result = cur.fetchone()
+
+    if result and result[4] == 'STATUS_PARKED':
+        owner_id = result[1]
+        if owner_id > 0:
+            #This means that the owner of this car has account
+            owner_details = get_user_details(owner_id)
+            if owner_details[3] == 'EMPLOYEE':
+                #No taxes to pay
+                return update_car_status(plate, 'STATUS_CLOSED')
+            elif owner_details[3] == 'STANDARD':
+                if result[5] == 0:
+                    #No more taxes
+                    return update_car_status(plate, 'STATUS_CLOSED')
+                else: 
+                    print(f"The car with car plate {plate} has taxes unpaid!")
+                    return False
+        else:
+            #Unknown customer, he can pay his taxes via mobile app without account, just with the car plate nmber
+            if result[5] == 0:
+                return update_car_status(plate, 'STATUS_CLOSED')
+        
+        #Release the parking slot
+
+    cur.close()
+    conn.close()
+
 def detect_a_standard_parking_slot():
     #To be implemented:
     return 1
@@ -171,3 +206,6 @@ def detect_a_standard_parking_slot():
 def detect_an_employee_parking_slot():
     #To be implemented:
     return 2
+
+def release_the_parking_slot():
+    #To be implemented
