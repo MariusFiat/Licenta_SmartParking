@@ -5,17 +5,18 @@ import cv2
 import sys
 import os
 import serial
-import sys
 
 from CameraWrapper import CameraWrapper
 from yolo4 import plateRecognition
 from checkplates import check_license_plate
 from queue import Queue
+from threading import *
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Database_Scripts.supabase_base_functions import check_plate_in_the_reservation_table
 from Database_Scripts.supabase_base_functions import check_exit_status
+from Database_Scripts.background_tasks import calculate_the_taxes_scheduled_task
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -103,9 +104,11 @@ def detectSide(side):
 def main():
     print("\nStarting parking recognition service...")
 
-    #Daemon threads for db updates?
-    #Calculate the tax until now for each car
-    #Update some expired slot bookings
+    #Update tax field daemon thread
+    Tax_Thread = Thread(target = calculate_the_taxes_scheduled_task, daemon = True) #This task is a main helper, it must die when the main thread stops.
+    Tax_Thread.start()
+
+    #Main thread will enter in a loop and will execute the main detection app stage
     serial_handler()
     
 main()
