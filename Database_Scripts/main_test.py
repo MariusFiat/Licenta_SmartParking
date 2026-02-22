@@ -20,12 +20,6 @@ load_dotenv()
 DB_URL = os.getenv("DB_URL")
 
 def main():
-    conn = psycopg2.connect(DB_URL)
-    cur = conn.cursor()
-
-    print(get_parking_slot())
-
-    cur.close()
-    conn.close()
+    print(update_parking_slot_status(get_parking_slot('EMPLOYEE'), 'FREE'))
 
 main()

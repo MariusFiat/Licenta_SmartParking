@@ -216,6 +216,29 @@ def get_parking_slot(slot_type = 'STANDARD'): #slot_type can be 'STANDARD' or 'E
     else: 
         return -1
 
+def update_parking_slot_status(slot_number, new_status):
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+        
+        update_query = """
+            UPDATE slots SET status = %s
+            WHERE id = %s;
+        """
+
+        cur.execute(update_query, (new_status, slot_number))
+
+        conn.commit()
+        print(f"The status for slot with number : {slot_number} was updated at status: {new_status}")
+    except Exception as e:
+        print("Error at parking_slot status update!")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+    return True
+
+
 def release_the_parking_slot(slot_number):
     #To be implemented
     return 1
