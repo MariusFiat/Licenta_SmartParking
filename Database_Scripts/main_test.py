@@ -8,7 +8,7 @@ import serial
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from Database_Scripts.supabase_base_functions import get_reservations, get_parking_pricing, set_reservation_tax, calculate_the_taxes
+from Database_Scripts.supabase_base_functions import *
 
 import os
 import psycopg2
@@ -23,10 +23,9 @@ def main():
     conn = psycopg2.connect(DB_URL)
     cur = conn.cursor()
 
-    
+    print(get_parking_slot())
+
     cur.close()
     conn.close()
-
-    calculate_the_taxes()
 
 main()

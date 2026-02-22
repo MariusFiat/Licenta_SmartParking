@@ -199,15 +199,24 @@ def check_exit_status(plate):
     cur.close()
     conn.close()
 
-def detect_a_standard_parking_slot():
-    #To be implemented:
-    return 1
+def get_parking_slot(slot_type = 'STANDARD'): #slot_type can be 'STANDARD' or 'EMPLOYEE'
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
 
-def detect_an_employee_parking_slot():
-    #To be implemented:
-    return 2
+    query = "SELECT * FROM slots WHERE slot_type = %s and status = 'FREE';"
+    cur.execute(query, (slot_type,))
 
-def release_the_parking_slot():
+    result = cur.fetchone()
+ 
+    cur.close()
+    conn.close()
+    
+    if result:
+        return result[0]
+    else: 
+        return -1
+
+def release_the_parking_slot(slot_number):
     #To be implemented
     return 1
 
