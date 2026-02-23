@@ -20,7 +20,7 @@ def check_plate_in_the_reservation_table(plate):
     cur.close()
     conn.close()
 
-    if result:
+    if result and result[4] != 'STATUS_CLOSED':
         #This means that the car has reservation and now I have to check if is an emplyee or a standard customer
         print(f"The car with the plate number: {plate} was found in the db.")
         checks = check_plate_status_and_subscription_type(result) #Check the plate to see if this car plate is booked for an employee or it's just a simple customer that wants to park
@@ -48,7 +48,7 @@ def check_plate_status_and_subscription_type(result):
         tax = result[5]
         entry_time = result[6]
 
-    if status == 'STATUS_PARKED' or status == 'STATUS_CLOSED':
+    if status == 'STATUS_PARKED':
         print("This reservation is already used!")
         return False
 
@@ -71,9 +71,12 @@ def insert_new_car(car_plate, id_owner, status, parking_tax):
             VALUES (%s, %s, %s, %s, %s, NOW(), NOW(), %s);
         """
 
-        parking_slot = detect_a_standard_parking_slot() #The system must be assign a standard parking slot if there is at least one not assigned
+        parking_slot = get_parking_slot('STANDARD') #The system must be assign a standard parking slot if there is at least one not assigned
 
         if parking_slot >= 1: #This means that exists at least one more empty slot
+            #Update the status for this parking_slot
+            update_parking_slot_status(parking_slot, 'ASSIGNED')
+
             record_to_insert = (car_plate, id_owner, parking_slot, status, parking_tax, 1)
 
             cur.execute(insert_query, record_to_insert)
@@ -138,6 +141,9 @@ def get_user_details(user_details_id):
     
     return result
 
+def get_user_subscription_type(userDetails):
+    return userDetails[3]
+
 def set_the_entry_time(car_plate):
     conn = None
     try:
@@ -170,12 +176,13 @@ def check_exit_status(plate):
     cur = conn.cursor()
 
     #Get the reservation for this plate
-    query = "SELECT * FROM reservation WHERE car_plate = %s;"
+    query = "SELECT * FROM reservation WHERE car_plate = %s and status = 'STATUS_PARKED';"
     cur.execute(query, (plate,))
     result = cur.fetchone()
 
     if result and result[4] == 'STATUS_PARKED':
         owner_id = result[1]
+
         if owner_id > 0:
             #This means that the owner of this car has account
             owner_details = get_user_details(owner_id)
@@ -185,6 +192,9 @@ def check_exit_status(plate):
             elif owner_details[3] == 'STANDARD':
                 if result[5] == 0:
                     #No more taxes
+                    #Release the parking slot
+                    update_parking_slot_status(result[3], 'FREE')
+
                     return update_car_status(plate, 'STATUS_CLOSED')
                 else: 
                     print(f"The car with car plate {plate} has taxes unpaid!")
@@ -199,15 +209,47 @@ def check_exit_status(plate):
     cur.close()
     conn.close()
 
-def detect_a_standard_parking_slot():
-    #To be implemented:
-    return 1
+def get_parking_slot(slot_type = 'STANDARD'): #slot_type can be 'STANDARD' or 'EMPLOYEE'
+    conn = psycopg2.connect(DB_URL)
+    cur = conn.cursor()
 
-def detect_an_employee_parking_slot():
-    #To be implemented:
-    return 2
+    query = "SELECT * FROM slots WHERE slot_type = %s and status = 'FREE';"
+    cur.execute(query, (slot_type,))
 
-def release_the_parking_slot():
+    result = cur.fetchone()
+ 
+    cur.close()
+    conn.close()
+    
+    if result:
+        return result[0]
+    else: 
+        return -1
+
+def update_parking_slot_status(slot_number, new_status):
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+        
+        update_query = """
+            UPDATE slots SET status = %s
+            WHERE id = %s;
+        """
+
+        cur.execute(update_query, (new_status, slot_number))
+
+        conn.commit()
+        print(f"The status for slot with number : {slot_number} was updated at status: {new_status}")
+    except Exception as e:
+        print("Error at parking_slot status update!")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+    return True
+
+
+def release_the_parking_slot(slot_number):
     #To be implemented
     return 1
 
@@ -224,7 +266,7 @@ def get_parking_pricing(conn, cur):
 
 def set_reservation_tax(conn, cur, id, tax):
     query = """
-        UPDATE reservation SET tax = %s WHERE id = %s;
+        UPDATE reservation SET tax = %s WHERE id = %s and status = 'STATUS_PARKED';
     """
     cur.execute(query, (tax, id))
     conn.commit()
@@ -243,3 +285,29 @@ def calculate_the_taxes():
         if owner[3] == 'STANDARD':
             set_reservation_tax(conn, cur, res[0], res[5] + parking_pricing[0])
         
+
+#Method that creates a reservation started by a mobile request
+def make_reservation(user_id, car_plate, slot): #I HAVE TO ADD A CUSTOM START_TIMESTAMP
+    conn = None
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+
+        query = """
+            INSERT INTO reservation (
+                car_plate, user_id, slot, status, tax, entry_timestamp, start_timestamp, number_of_hours
+            )
+            VALUES(%s, %s, %s, %s, %s, NOW(), NOW(), %s)
+        """
+
+        record_to_insert = (car_plate, user_id, slot, 'STATUS_BOOKED', 0, 1)
+        cur.execute(query, record_to_insert)
+        conn.commit()
+
+    except Exception as e:
+        print("Error at reservation request handling! Method: 'make_reservation'")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+    return True

@@ -112,6 +112,25 @@ def insert_reserved_unknown_user_id(conn, cur):
 
     print("The unknown reserved user was added!")
 
+
+def insert_default_available_slots(conn, cur):
+    insert_query = """
+        INSERT INTO slots (
+            status, slot_type, parking_id
+        )
+        VALUES (%s, %s, %s);
+    """
+
+    for i in range(1,10):
+        if i <= 3:
+            record_to_insert = ('FREE', 'EMPLOYEE', 1)
+        else:
+            record_to_insert = ('FREE', 'STANDARD', 1)
+        cur.execute(insert_query, record_to_insert)
+        conn.commit()
+
+    print("The slots were added to the parking!")
+
 def create_database_tables():
     try:
         # DB connection
@@ -124,6 +143,7 @@ def create_database_tables():
         create_parking_details_table(conn, cur)
         create_slots_table(conn, cur)
         insert_reserved_unknown_user_id(conn, cur)
+        insert_default_available_slots(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
