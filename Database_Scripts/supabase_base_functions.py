@@ -20,7 +20,7 @@ def check_plate_in_the_reservation_table(plate):
     cur.close()
     conn.close()
 
-    if result:
+    if result and result[4] != 'STATUS_CLOSED':
         #This means that the car has reservation and now I have to check if is an emplyee or a standard customer
         print(f"The car with the plate number: {plate} was found in the db.")
         checks = check_plate_status_and_subscription_type(result) #Check the plate to see if this car plate is booked for an employee or it's just a simple customer that wants to park
@@ -48,7 +48,7 @@ def check_plate_status_and_subscription_type(result):
         tax = result[5]
         entry_time = result[6]
 
-    if status == 'STATUS_PARKED' or status == 'STATUS_CLOSED':
+    if status == 'STATUS_PARKED':
         print("This reservation is already used!")
         return False
 
@@ -71,9 +71,12 @@ def insert_new_car(car_plate, id_owner, status, parking_tax):
             VALUES (%s, %s, %s, %s, %s, NOW(), NOW(), %s);
         """
 
-        parking_slot = detect_a_standard_parking_slot() #The system must be assign a standard parking slot if there is at least one not assigned
+        parking_slot = get_parking_slot('STANDARD') #The system must be assign a standard parking slot if there is at least one not assigned
 
         if parking_slot >= 1: #This means that exists at least one more empty slot
+            #Update the status for this parking_slot
+            update_parking_slot_status(parking_slot, 'ASSIGNED')
+
             record_to_insert = (car_plate, id_owner, parking_slot, status, parking_tax, 1)
 
             cur.execute(insert_query, record_to_insert)
@@ -170,12 +173,13 @@ def check_exit_status(plate):
     cur = conn.cursor()
 
     #Get the reservation for this plate
-    query = "SELECT * FROM reservation WHERE car_plate = %s;"
+    query = "SELECT * FROM reservation WHERE car_plate = %s and status = 'STATUS_PARKED';"
     cur.execute(query, (plate,))
     result = cur.fetchone()
 
     if result and result[4] == 'STATUS_PARKED':
         owner_id = result[1]
+
         if owner_id > 0:
             #This means that the owner of this car has account
             owner_details = get_user_details(owner_id)
@@ -185,6 +189,9 @@ def check_exit_status(plate):
             elif owner_details[3] == 'STANDARD':
                 if result[5] == 0:
                     #No more taxes
+                    #Release the parking slot
+                    update_parking_slot_status(result[3], 'FREE')
+
                     return update_car_status(plate, 'STATUS_CLOSED')
                 else: 
                     print(f"The car with car plate {plate} has taxes unpaid!")
@@ -256,7 +263,7 @@ def get_parking_pricing(conn, cur):
 
 def set_reservation_tax(conn, cur, id, tax):
     query = """
-        UPDATE reservation SET tax = %s WHERE id = %s;
+        UPDATE reservation SET tax = %s WHERE id = %s and status = 'STATUS_PARKED';
     """
     cur.execute(query, (tax, id))
     conn.commit()
