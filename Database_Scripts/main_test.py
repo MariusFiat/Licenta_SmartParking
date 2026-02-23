@@ -20,6 +20,6 @@ load_dotenv()
 DB_URL = os.getenv("DB_URL")
 
 def main():
-    print(update_parking_slot_status(get_parking_slot('EMPLOYEE'), 'FREE'))
+    print(make_reservation(2,'TM02TST', get_parking_slot()))
 
 main()

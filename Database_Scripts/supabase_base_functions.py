@@ -141,6 +141,9 @@ def get_user_details(user_details_id):
     
     return result
 
+def get_user_subscription_type(userDetails):
+    return userDetails[3]
+
 def set_the_entry_time(car_plate):
     conn = None
     try:
@@ -282,3 +285,29 @@ def calculate_the_taxes():
         if owner[3] == 'STANDARD':
             set_reservation_tax(conn, cur, res[0], res[5] + parking_pricing[0])
         
+
+#Method that creates a reservation started by a mobile request
+def make_reservation(user_id, car_plate, slot): #I HAVE TO ADD A CUSTOM START_TIMESTAMP
+    conn = None
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+
+        query = """
+            INSERT INTO reservation (
+                car_plate, user_id, slot, status, tax, entry_timestamp, start_timestamp, number_of_hours
+            )
+            VALUES(%s, %s, %s, %s, %s, NOW(), NOW(), %s)
+        """
+
+        record_to_insert = (car_plate, user_id, slot, 'STATUS_BOOKED', 0, 1)
+        cur.execute(query, record_to_insert)
+        conn.commit()
+
+    except Exception as e:
+        print("Error at reservation request handling! Method: 'make_reservation'")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+    return True
