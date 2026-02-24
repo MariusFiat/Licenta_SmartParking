@@ -140,6 +140,18 @@ def insert_default_available_slots(conn, cur):
         conn.commit()
     print("The slots were added to the parking!")
 
+def insert_initial_parking_details(conn, cur):
+    insert_query = """
+        INSERT INTO parking_details (id, pricing, number_of_slots, slots)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (id) DO NOTHING;
+    """
+    record_to_insert = (1, 3.0, 10, 10)
+    
+    cur.execute(insert_query, record_to_insert)
+    conn.commit()
+    print("Initial parking details (Price: 3.0) added successfully!")
+
 def create_database_tables():
     try:
         conn = psycopg2.connect(DB_URL)
@@ -151,6 +163,7 @@ def create_database_tables():
         create_reservation_table(conn, cur)
         create_slots_table(conn, cur)
         
+        insert_initial_parking_details(conn, cur)
         setup_auth_trigger(conn, cur)
         insert_reserved_unknown_user_id(conn, cur)
         insert_default_available_slots(conn, cur)
