@@ -15,7 +15,7 @@ def check_plate_in_the_reservation_table(plate):
     cur = conn.cursor()
 
     # Check if there are a reservation for this car_plate.
-    query = "SELECT * FROM reservation WHERE car_plate = %s;"
+    query = "SELECT * FROM reservation WHERE car_plate = %s and status != 'STATUS_CLOSED';"
     cur.execute(query, (plate,))
 
     result = cur.fetchone()
