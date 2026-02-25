@@ -206,6 +206,7 @@ def check_exit_status(plate):
             owner_details = get_user_details(owner_id)
             if owner_details[3] == 'EMPLOYEE':
                 # No taxes to pay
+                update_parking_slot_status(result[3], 'FREE')
                 return update_car_status(plate, 'STATUS_CLOSED')
             elif owner_details[3] == 'STANDARD':
                 if result[5] == 0:
