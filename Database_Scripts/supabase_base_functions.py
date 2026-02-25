@@ -32,13 +32,27 @@ def check_plate_in_the_reservation_table(plate):
         else:
             return -1 # Access denied (maybe the car is already inside and the plate is used again?)
     else:
-        print(f"Unknown car")
-        # Add the car to the parking db and set the NO_SUBSCRIPTION status
-        # At the exit, this plate will have to pay the tax
-        # id_owner = UNKNOWN_USER_UUID is the default user_id for unknown car_plates!!!!!
-        
-        # Modified: Passed UNKNOWN_USER_UUID instead of 0
-        assigned_slot = insert_new_car(plate, UNKNOWN_USER_UUID, 'STATUS_PARKED', 0) 
+        #Check if this car_plate is associated with an existing account (check if this plate is present in the 'car' table)
+        #If it is, check if the owner has a special kind of subscription
+        car = check_this_car_plate_into_car_table(plate)
+        if car:
+            owner_details = get_user_details(car[2])
+            if owner_details[3] == 'EMPLOYEE': #An employee can get both standard or employee slot_type.
+                assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='EMPLOYEE')
+                if assigned_slot != -1:
+                    return assigned_slot
+                else:
+                    return  insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0)
+            else:
+                return insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0)
+        else:  
+            print(f"Unknown car")
+            # Add the car to the parking db and set the NO_SUBSCRIPTION status
+            # At the exit, this plate will have to pay the tax
+            # id_owner = UNKNOWN_USER_UUID is the default user_id for unknown car_plates!!!!!
+            
+            # Modified: Passed UNKNOWN_USER_UUID instead of 0
+            assigned_slot = insert_new_car(plate, UNKNOWN_USER_UUID, 'STATUS_PARKED', 0) 
         return assigned_slot
     
 
@@ -60,7 +74,7 @@ def check_plate_status_and_subscription_type(result):
     return update_car_status(car_plate, 'STATUS_PARKED') and set_the_entry_time(car_plate)
 
 
-def insert_new_car(car_plate, id_owner, status, parking_tax):
+def insert_new_car(car_plate, id_owner, status, parking_tax, slot_type = 'STANDARD'):
     conn = None
     try:
         conn = psycopg2.connect(DB_URL)
@@ -74,7 +88,7 @@ def insert_new_car(car_plate, id_owner, status, parking_tax):
             VALUES (%s, %s, %s, %s, %s, NOW(), NOW(), %s);
         """
 
-        parking_slot = get_parking_slot('STANDARD') # The system must be assign a standard parking slot if there is at least one not assigned
+        parking_slot = get_parking_slot(slot_type) # The system must be assign a standard parking slot if there is at least one not assigned
 
         if parking_slot >= 1: # This means that exists at least one more empty slot
             # Update the status for this parking_slot
@@ -318,3 +332,27 @@ def make_reservation(user_id, car_plate, slot): # I HAVE TO ADD A CUSTOM START_T
             cur.close()
             conn.close()
     return True
+
+def check_this_car_plate_into_car_table(plate):
+    conn = None
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+
+        query = """
+            SELECT * from car WHERE car_plate = %s;
+        """
+        cur.execute(query, (plate,))
+
+        result = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print("Error at query execution statement for selecting from the car table!")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+    return result
