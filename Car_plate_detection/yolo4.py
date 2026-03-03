@@ -45,11 +45,15 @@ def get_roi(frame, side):
         offset = W // 2
     return roi, offset
 
-def detect_plates(cap, side):
+def detect_plates(cap, side, timeout_seconds = 10):
     results_plates = []
     num_detected = 0
+    start_time = time.time()
 
     while num_detected < MAX_SAVED:
+        if time.time() - start_time > timeout_seconds: #Kill this detection if the timer expired
+            break
+
         ret, frame = cap.read()
         if not ret:
             break
@@ -88,7 +92,7 @@ def detect_plates(cap, side):
     return results_plates
 
 def plateRecognition(cap, side):
-    results_plates = detect_plates(cap, side)
+    results_plates = detect_plates(cap, side, timeout_seconds = 7)
     if results_plates:
         counter = Counter(results_plates)
         most_common = counter.most_common(1)[0]
