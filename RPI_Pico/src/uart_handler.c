@@ -20,13 +20,31 @@ static char command_Exit[COMMAND_LENGTH + 1];
 static ServoMessage_t entryServo = {false, false};
 static ServoMessage_t exitServo = {false, false};
 
+static bool wasInitialized = false;
+static bool init = false;
+static char command_Init[COMMAND_LENGTH + 1];
+
+static void check_for_init_sequence(){
+    if(init == true){
+        xSemaphoreGive(xSemaphore_Entry_Res);
+        xSemaphoreGive(xSemaphore_Exit_Res);
+        wasInitialized = true;
+    }
+}
+
 void uart_handler(void* pvParams){
     (void) pvParams;
 
     while(1){
         //printf("%s\n", "The uart task is running!");
-        checkEntryRequest();
-        checkExitRequest();
+        if(wasInitialized){
+            checkEntryRequest();
+            checkExitRequest();
+        }
+        else{
+            check_for_init_sequence();
+        }
+        
         route_message_from_rpi5();
 
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));
@@ -183,6 +201,9 @@ static void route_message_from_rpi5(){
         else if(strstr(command, "EX")){
             strcpy(command_Exit, command);
             readExitResponseDone = readStatus;
+        } else if(strstr(command, "INIT")){
+            strcpy(command_Init, command);
+            init = readStatus;
         }
     }
     memset(command, 0, sizeof(command));

@@ -32,23 +32,15 @@ SemaphoreHandle_t xSemaphore_Barrier_Safety_Exit = NULL;
 TimerHandle_t xTimer_Barrier_Entry = NULL;
 TimerHandle_t xTimer_Barrier_Exit = NULL;
 
+static void create_resources();
+static void block_until_init_signal_was_received();
+
 int main()
 {
     init_board();
 
-    xQueue_Entry_Req = xQueueCreate(QUEUE_ENTRY_REQ_LENGTH, sizeof(bool));
-    xQueue_Exit_Req = xQueueCreate(QUEUE_EXIT_REQ_LENGTH, sizeof(bool));
-    xQueue_Servo_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
-    xQueue_Servo_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
-    xQueue_Servo_Safety_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
-    xQueue_Servo_Safety_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
-
-    xSemaphore_Entry_Res = xSemaphoreCreateBinary();
-    xSemaphore_Exit_Res = xSemaphoreCreateBinary();
-    xSemaphore_Entry_Timer = xSemaphoreCreateBinary();
-    xSemaphore_Exit_Timer = xSemaphoreCreateBinary();
-    xSemaphore_Barrier_Safety_Entry = xSemaphoreCreateBinary();
-    xSemaphore_Barrier_Safety_Exit = xSemaphoreCreateBinary();
+    create_resources();
+    block_until_init_signal_was_received();
 
     xTaskCreate(barrier_safety_check, "BarriersSafety", 256, NULL, 1, NULL);
 
@@ -62,4 +54,27 @@ int main()
 
     printf("%s", "FreeRTOS has run out of RAM memory!");
     while(1){};
+}
+
+static void create_resources(){
+    xQueue_Entry_Req = xQueueCreate(QUEUE_ENTRY_REQ_LENGTH, sizeof(bool));
+    xQueue_Exit_Req = xQueueCreate(QUEUE_EXIT_REQ_LENGTH, sizeof(bool));
+    xQueue_Servo_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+    xQueue_Servo_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+    xQueue_Servo_Safety_Entry = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+    xQueue_Servo_Safety_Exit = xQueueCreate(QUEUE_SERVO_LENGTH, sizeof(ServoMessage_t));
+
+    xSemaphore_Entry_Res = xSemaphoreCreateBinary();
+    xSemaphore_Exit_Res = xSemaphoreCreateBinary();
+    xSemaphore_Entry_Timer = xSemaphoreCreateBinary();
+    xSemaphore_Exit_Timer = xSemaphoreCreateBinary();
+    xSemaphore_Barrier_Safety_Entry = xSemaphoreCreateBinary();
+    xSemaphore_Barrier_Safety_Exit = xSemaphoreCreateBinary();
+}
+
+static void block_until_init_signal_was_received(){
+    xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0);
+    xSemaphoreTake(xSemaphore_Barrier_Safety_Exit, 0);
+    xSemaphoreTake(xSemaphore_Entry_Res, 0);
+    xSemaphoreTake(xSemaphore_Exit_Res, 0);
 }

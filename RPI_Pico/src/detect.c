@@ -18,6 +18,8 @@ void detect_entry(void* params){
     //printf("%s\n", "Run the detect method for entry!\n");
 
     while(true) {
+        if(xSemaphoreTake(xSemaphore_Entry_Res, 0) == pdFALSE) continue;
+
         bool object_detected = !gpio_get(ENTRY_SENSOR); 
 
         //printf("%s - %d\n", "Detect entry! -> ", object_detected);
@@ -35,7 +37,7 @@ void detect_entry(void* params){
 
             */
             xQueueSend(xQueue_Entry_Req, &object_detected, 0);
-            xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
+            // xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
 
             // /* Block the detection until the car leave from the barrier area. */
             vTaskDelay(pdMS_TO_TICKS(500));
@@ -48,6 +50,8 @@ void detect_entry(void* params){
             //xQueueSend(xQueue_Entry_Req, &object_detected, 0);
         }
 
+        xSemaphoreGive(xSemaphore_Entry_Res);
+        
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
     }
 }
@@ -60,6 +64,8 @@ void detect_exit(void* params){
     //printf("%s\n", "Run the detect method for exit!\n");
 
     while(true){
+        if(xSemaphoreTake(xSemaphore_Exit_Res, 0) == pdFALSE) continue;
+
         bool object_detected = !gpio_get(EXIT_SENSOR);
 
         //printf("%s - %d\n", "Detect exit! -> ", object_detected);
@@ -67,7 +73,7 @@ void detect_exit(void* params){
         if(object_detected){
             //Save the signal in the communication Queue.
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
-            xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
+            //xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
 
             // /* Semaphore for closing sync. The timer that starts at barrier opening will block this semaphore
             //     [..] and will release it after the car leave. Same approach on the both sides.
@@ -79,6 +85,8 @@ void detect_exit(void* params){
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
         }
         
+        xSemaphoreGive(xSemaphore_Exit_Res);
+
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
     }
 }
