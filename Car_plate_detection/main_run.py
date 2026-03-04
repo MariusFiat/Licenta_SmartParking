@@ -26,6 +26,13 @@ port_virtual = '/dev/ttyACM0' # This is the pico serial port.
 ser = serial.Serial(port_virtual, 115200, timeout = 1)
 cap = CameraWrapper()
 
+def send_init_sequence():
+    command = "INIT00\n"
+                
+    ser.write(command.encode('utf-8'))
+    ser.flush()
+    print("[System]: The init command was send to the PICO!\n")
+
 def serial_handler():
     while True:
         line_raw = ser.readline()
@@ -107,6 +114,8 @@ def main():
     #Update tax field daemon thread
     Tax_Thread = Thread(target = calculate_the_taxes_scheduled_task, daemon = True) #This task is a main helper, it must die when the main thread stops.
     Tax_Thread.start()
+
+    send_init_sequence()
 
     #Main thread will enter in a loop and will execute the main detection app stage
     serial_handler()
