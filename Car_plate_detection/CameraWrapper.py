@@ -5,7 +5,6 @@ import cv2
 class CameraWrapper:
     def __init__(self):
         self.picam2 = Picamera2()
-        s
         config = self.picam2.create_preview_configuration(main={
             "format": "RGB888", 
             "size": (2304, 1296) #Just half of the max FOV
