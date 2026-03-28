@@ -234,6 +234,74 @@ def create_the_make_reservation_function(conn, cur):
     conn.commit()
     print("The 'make_reservation' function was created succesfully!")
 
+def create_the_update_future_reservation_function(conn, cur):
+    function_sql= """
+        CREATE OR REPLACE FUNCTION update_future_reservation(
+        p_reservation_id INT,
+        p_user_id UUID,
+        p_new_start TIMESTAMP,
+        p_new_hours INT
+    ) RETURNS BOOLEAN AS $$
+    DECLARE
+        v_sub_type TEXT;
+        v_car_plate TEXT;
+        v_new_slot_id INT;
+        v_new_end TIMESTAMP;
+        v_pricing FLOAT8;
+    BEGIN
+        -- 0. Compute the new end time of the reservation based on the new start time and new number of hours
+        v_new_end := p_new_start + (p_new_hours || ' hours')::interval;
+
+        -- 1. Get the car plate and subscription type for the reservation we want to update
+        SELECT car_plate INTO v_car_plate FROM reservation WHERE id = p_reservation_id AND user_id = p_user_id;
+        SELECT subscription_type INTO v_sub_type FROM user_details WHERE id = p_user_id;
+
+        -- 2. Verify if the car has another reservation that overlaps with the new time interval (excluding the current reservation)
+        IF EXISTS (
+            SELECT 1 FROM reservation 
+            WHERE car_plate = v_car_plate AND id != p_reservation_id
+            AND start_timestamp < v_new_end 
+            AND (start_timestamp + (number_of_hours || ' hours')::interval) > p_new_start
+        ) THEN
+            RAISE EXCEPTION 'The car %s already has another reservation that overlaps with the new time interval!', v_car_plate;
+        END IF;
+
+        -- 3. Search for an available slot that does not have overlaps (excluding the current reservation)
+        SELECT id INTO v_new_slot_id
+        FROM slots s
+        WHERE s.slot_type = v_sub_type
+        AND NOT EXISTS (
+            SELECT 1 FROM reservation r
+            WHERE r.slot = s.id AND r.id != p_reservation_id
+                AND r.start_timestamp < v_new_end
+                AND (r.start_timestamp + (r.number_of_hours || ' hours')::interval) > p_new_start
+        )
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED;
+
+        IF v_new_slot_id IS NULL THEN
+            RAISE EXCEPTION 'There are no available slots for the new time interval!';
+        END IF;
+
+        -- 4. Recalculăm taxa
+        SELECT pricing INTO v_pricing FROM parking_details LIMIT 1;
+        
+        -- 5. Update rezervare
+        UPDATE reservation
+        SET start_timestamp = p_new_start,
+            number_of_hours = p_new_hours,
+            slot = v_new_slot_id,
+            tax = p_new_hours * COALESCE(v_pricing, 0)
+        WHERE id = p_reservation_id;
+
+        RETURN TRUE;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
+    cur.execute(function_sql)
+    conn.commit()
+    print("The 'update_future_reservation' function was created succesfully!")
+    
 def create_database_tables():
     try:
         conn = psycopg2.connect(DB_URL)
@@ -250,6 +318,7 @@ def create_database_tables():
         insert_reserved_unknown_user_id(conn, cur)
         insert_default_available_slots(conn, cur)
         create_the_make_reservation_function(conn, cur)
+        create_the_update_future_reservation_function(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
