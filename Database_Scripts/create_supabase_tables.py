@@ -58,7 +58,7 @@ def create_reservation_table(conn, cur):
             id SERIAL PRIMARY KEY,
             user_id UUID REFERENCES user_details(id) ON DELETE CASCADE,
             car_plate TEXT NOT NULL,
-            slot INTEGER NOT NULL,
+            slot INTEGER REFERENCES slots(id) ON DELETE CASCADE,
             status TEXT NOT NULL,
             tax DOUBLE PRECISION,
             entry_timestamp TIMESTAMP,
@@ -151,6 +151,88 @@ def insert_initial_parking_details(conn, cur):
     cur.execute(insert_query, record_to_insert)
     conn.commit()
     print("Initial parking details (Price: 3.0) added successfully!")
+    
+def create_the_make_reservation_function(conn, cur):
+    function_sql = """CREATE OR REPLACE FUNCTION make_future_reservation(
+        p_user_id UUID,
+        p_car_plate TEXT,
+        p_start_time TIMESTAMP,
+        p_hours INT
+    ) RETURNS INT AS $$
+    DECLARE
+        v_sub_type TEXT;
+        v_slot_id INT;
+        v_reservation_id INT;
+        v_pricing FLOAT8;
+        v_tax FLOAT8;
+        v_end_time TIMESTAMP;
+    BEGIN
+        -- 0. Compute the end time of the reservation based on the start time and number of hours
+        v_end_time := p_start_time + (p_hours || ' hours')::interval;
+
+        IF EXISTS (
+            SELECT 1
+            FROM reservation
+            WHERE car_plate = p_car_plate
+            -- Verify time overlap (similar to how we do it for slots)
+            AND start_timestamp < v_end_time
+            AND (start_timestamp + (number_of_hours || ' hours')::interval) > p_start_time
+        ) THEN
+            -- If we get here, we stop everything and throw an error!
+            RAISE EXCEPTION 'Car % already has a reservation in this time interval!', p_car_plate;
+        END IF;
+
+        -- 1. Verify if the user exists and get their subscription type
+        SELECT subscription_type INTO v_sub_type
+        FROM user_details
+        WHERE id = p_user_id;
+
+        IF v_sub_type IS NULL THEN
+            RAISE EXCEPTION 'User or subscription not found.';
+        END IF;
+
+        -- 2. Search for an available slot that does not have overlaps
+        SELECT id INTO v_slot_id
+        FROM slots s
+        WHERE s.slot_type = v_sub_type
+        AND NOT EXISTS (
+            SELECT 1
+            FROM reservation r
+            WHERE r.slot = s.id
+                AND r.start_timestamp < v_end_time
+                AND (r.start_timestamp + (r.number_of_hours || ' hours')::interval) > p_start_time
+        )
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED;
+
+        IF v_slot_id IS NULL THEN
+            RAISE EXCEPTION 'There are no available slots for this time interval.';
+        END IF;
+
+        -- 3. Extract the pricing from the parking details (we assume there's only one record in parking_details)
+        SELECT pricing INTO v_pricing
+        FROM parking_details
+        LIMIT 1;
+
+        IF v_pricing IS NULL THEN
+            v_pricing := 0.0;
+        END IF;
+
+        -- 4. Calculate the total tax
+        v_tax := v_pricing * p_hours;
+
+        -- 5. Insert the reservation
+        INSERT INTO reservation (user_id, car_plate, slot, status, tax, start_timestamp, number_of_hours)
+        VALUES (p_user_id, p_car_plate, v_slot_id, 'ASSIGNED', v_tax, p_start_time, p_hours)
+        RETURNING id INTO v_reservation_id;
+
+        RETURN v_reservation_id;
+    END;
+    $$ LANGUAGE plpgsql;"""
+    
+    cur.execute(function_sql)
+    conn.commit()
+    print("The 'make_reservation' function was created succesfully!")
 
 def create_database_tables():
     try:
@@ -167,6 +249,7 @@ def create_database_tables():
         setup_auth_trigger(conn, cur)
         insert_reserved_unknown_user_id(conn, cur)
         insert_default_available_slots(conn, cur)
+        create_the_make_reservation_function(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
