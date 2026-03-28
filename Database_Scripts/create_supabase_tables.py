@@ -223,7 +223,7 @@ def create_the_make_reservation_function(conn, cur):
 
         -- 5. Insert the reservation
         INSERT INTO reservation (user_id, car_plate, slot, status, tax, start_timestamp, number_of_hours)
-        VALUES (p_user_id, p_car_plate, v_slot_id, 'ASSIGNED', v_tax, p_start_time, p_hours)
+        VALUES (p_user_id, p_car_plate, v_slot_id, 'STATUS_BOOKED', v_tax, p_start_time, p_hours)
         RETURNING id INTO v_reservation_id;
 
         RETURN v_reservation_id;
