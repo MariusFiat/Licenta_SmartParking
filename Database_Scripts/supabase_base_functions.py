@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+from date import datetime, timedelta
 
 # Load the .env variables
 load_dotenv()
@@ -30,21 +31,24 @@ def check_plate_in_the_reservation_table(plate):
         if checks == True:
             return result[3] # Return the assigned slot.
         else:
-            return -1 # Access denied (maybe the car is already inside and the plate is used again?)
+            return -1 # Access denied (maybe the car is already inside and the plate is used again? or maybe the car is trying to enter before the start_timestamp for this reservation)
     else:
         #Check if this car_plate is associated with an existing account (check if this plate is present in the 'car' table)
         #If it is, check if the owner has a special kind of subscription
         car = check_this_car_plate_into_car_table(plate)
         if car:
             owner_details = get_user_details(car[2])
-            if owner_details[3] == 'EMPLOYEE': #An employee can get both standard or employee slot_type.
-                assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='EMPLOYEE')
-                if assigned_slot != -1:
-                    return assigned_slot
-                else:
-                    return  insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0)
+            if owner_details[3] == 'EMPLOYEE':
+                print(f"The car with the plate number: {plate} was found in the db and is associated with an employee account!")
             else:
-                return insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0)
+                print(f"The car with the plate number: {plate} was found in the db and is associated with a standard account!")
+                
+            assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='STANDARD')
+            
+            if assigned_slot != -1:
+                print(f"The assigned parking slot is: {assigned_slot}")
+            else:
+                print(f"The car with the plate number: {plate} was found in the db and is associated with an account, but there are no more parking slots available!")
         else:  
             print(f"Unknown car")
             # Add the car to the parking db and set the NO_SUBSCRIPTION status
@@ -71,7 +75,14 @@ def check_plate_status_and_subscription_type(result):
         return False
 
     # If this car has a reservation, just update the reservation status and set the entry time
-    return update_car_status(car_plate, 'STATUS_PARKED') and set_the_entry_time(car_plate)
+    
+    #Check if this is the correct hour for this reservation (if the car is trying to enter before the start_timestamp, we have to deny the access)
+    if status == 'STATUS_BOOKED':
+            if datetime.now() < entry_time:
+                print("This car is trying to enter before the start_timestamp for this reservation! Access denied!")
+                return False
+            else:
+                return update_car_status(car_plate, 'STATUS_PARKED') and set_the_entry_time(car_plate)
 
 
 def insert_new_car(car_plate, id_owner, status, parking_tax, slot_type = 'STANDARD'):
