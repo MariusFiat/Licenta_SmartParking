@@ -49,7 +49,7 @@ int main()
     xTaskCreate(detect_exit, "Detect_Exit", 256, NULL, 1, NULL);
     xTaskCreate(uart_handler, "UART_handler", 256, NULL, 1, NULL);
     xTaskCreate(servo_task, "Servo_Task", 256, NULL, 1, NULL);
-    xTaskCreate(lights_controller_task, "Lights_Controller", 256, NULL, 1, NULL);
+    //xTaskCreate(lights_controller_task, "Lights_Controller", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
     printf("%s", "FreeRTOS has run out of RAM memory!");

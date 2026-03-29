@@ -5,6 +5,7 @@
 #include "pico/cyw43_arch.h"
 
 #include "board_config.h"
+#include "lights_controller.h"
 
 static void common_hardware_init(){
     /* To be implemented. */
@@ -27,6 +28,8 @@ static void init_board_normal(){
 
 void init_board(){
     stdio_init_all();
+
+    init_lights_controller();
 
     #if USE_PICO_WH == 1
         init_board_wh();

@@ -7,6 +7,8 @@
 #include "board_config.h"
 #include "shared_resources.h"
 #include "uart_handler.h"
+#include "lights_controller.h"
+#include "stdlib.h"
 
 static void checkEntryRequest();
 static void checkExitRequest();
@@ -76,6 +78,12 @@ static void checkEntryRequest(){
 
                     /* Unlock the safety task semaphore for entry*/
                     xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
+
+                    /* Turn on the lights for the assigned parking slot. */
+                    char slot_string[4];
+                    strcpy(slot_string, (command_Entry + 3));
+                    uint8_t slot = atoi(slot_string);
+                    turn_on_lights(slot);
 
                 }else{
                     /* The barrier remains closed.*/
