@@ -39,7 +39,7 @@ void turn_off_lights(uint8_t slot){
 }
 
 void test_io_Expander(void){
-    uint8_t val_on = 0xFE; 
+    uint8_t val_on = 0x0; 
     uint8_t val_off = 0xFF;
 
     printf("Start test blink P0 la 100ms...\n");
@@ -47,10 +47,10 @@ void test_io_Expander(void){
     while(true) {
         i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_on, 1, false);
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(500));
 
         i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_off, 1, false);
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
