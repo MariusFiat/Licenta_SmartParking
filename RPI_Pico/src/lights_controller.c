@@ -46,10 +46,12 @@ void test_io_Expander(void){
 
     while(true) {
         i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_on, 1, false);
+        i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_on, 1, false);
 
         vTaskDelay(pdMS_TO_TICKS(500));
 
         i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_off, 1, false);
+        i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_off, 1, false);
 
         vTaskDelay(pdMS_TO_TICKS(500));
     }

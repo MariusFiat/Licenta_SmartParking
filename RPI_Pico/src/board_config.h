@@ -15,6 +15,7 @@
 #define I2C_SDA_LIGHTS 14
 #define I2C_SCL_LIGHTS 15
 #define PCF_0_ADDR 0x38
+#define PCF_1_ADDR 0x39
 
 /* Messages lengths and format. 
     ENAXXX = Entry allowed slot number XXX
