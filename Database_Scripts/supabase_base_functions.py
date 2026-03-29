@@ -1,7 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
-from date import datetime, timedelta
+from datetime import datetime, timedelta
 
 # Load the .env variables
 load_dotenv()
@@ -68,7 +68,7 @@ def check_plate_status_and_subscription_type(result):
         slot = result[3]
         status = result[4]
         tax = result[5]
-        entry_time = result[6]
+        start_time = result[7]
 
     if status == 'STATUS_PARKED':
         print("This reservation is already used!")
@@ -78,7 +78,7 @@ def check_plate_status_and_subscription_type(result):
     
     #Check if this is the correct hour for this reservation (if the car is trying to enter before the start_timestamp, we have to deny the access)
     if status == 'STATUS_BOOKED':
-            if datetime.now() < entry_time:
+            if datetime.now() < start_time:
                 print("This car is trying to enter before the start_timestamp for this reservation! Access denied!")
                 return False
             else:
@@ -133,7 +133,7 @@ def update_car_status(car_plate, new_status):
         update_query = """
         UPDATE reservation 
         SET status = %s 
-        WHERE car_plate = %s;
+        WHERE car_plate = %s and (status = 'STATUS_BOOKED' or status = 'STATUS_PARKED');
         """
         
         cur.execute(update_query, (new_status, car_plate))
