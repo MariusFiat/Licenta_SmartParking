@@ -8,6 +8,8 @@ load_dotenv()
 
 DB_URL = os.getenv("DB_URL")
 
+NUMBER_OF_SLOTS = 5
+
 # We define a constant for the guest user ID (all zeros UUID)
 UNKNOWN_USER_UUID = "00000000-0000-0000-0000-000000000000"
 
@@ -135,7 +137,7 @@ def insert_default_available_slots(conn, cur):
         )
         VALUES (%s, %s, %s);
     """
-    for i in range(1, 6):
+    for i in range(1, NUMBER_OF_SLOTS + 1):
         if i <= 3:
             record_to_insert = ('FREE', 'EMPLOYEE', 1)
         else:
@@ -145,12 +147,15 @@ def insert_default_available_slots(conn, cur):
     print("The slots were added to the parking!")
 
 def insert_initial_parking_details(conn, cur):
+    cur.execute("TRUNCATE TABLE parking_details RESTART IDENTITY CASCADE;") # Clear existing parking details and reset ID sequence
+    conn.commit()
+    
     insert_query = """
         INSERT INTO parking_details (id, pricing, number_of_slots, slots)
         VALUES (%s, %s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
     """
-    record_to_insert = (1, 3.0, 10, 10)
+    record_to_insert = (1, 3.0, NUMBER_OF_SLOTS, NUMBER_OF_SLOTS)
     
     cur.execute(insert_query, record_to_insert)
     conn.commit()
