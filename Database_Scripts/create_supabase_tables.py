@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+import csv
 
 # Load the .env variables
 load_dotenv()
@@ -306,6 +307,8 @@ def create_the_update_future_reservation_function(conn, cur):
     conn.commit()
     print("The 'update_future_reservation' function was created succesfully!")
     
+    
+#MOCK data generation and insertion for parking_history
 def create_parking_history_table(conn, cur):
     create_table_query = """
         CREATE TABLE IF NOT EXISTS parking_history (
@@ -320,6 +323,32 @@ def create_parking_history_table(conn, cur):
     conn.commit()
     print("The table 'parking_history' was created succesfully!")
     
+def insert_parking_history_from_csv(conn, cur):
+    cur.execute("DELETE FROM parking_history;")
+    conn.commit()
+
+    filename = 'parking_history_data.csv'
+    insert_query = """
+        INSERT INTO parking_history (
+            parking_id, recorded_at, occupied_slots, total_slots
+        )
+        VALUES (%s, %s, %s, %s);
+    """
+    
+    try:
+        with open(filename, mode='r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            
+            for row in reader:
+                cur.execute(insert_query, row)
+                
+            conn.commit()
+            print(f"Historical data from '{filename}' inserted into 'parking_history' table!")
+    except FileNotFoundError:
+        print(f"File '{filename}' not found. Run generate_csv_data.py first.")
+    except Exception as e:
+        print(f"Error during historical data insertion: {e}")
 
 def create_database_tables():
     try:
@@ -339,6 +368,7 @@ def create_database_tables():
         create_the_make_reservation_function(conn, cur)
         create_the_update_future_reservation_function(conn, cur)
         create_parking_history_table(conn, cur)
+        insert_parking_history_from_csv(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
