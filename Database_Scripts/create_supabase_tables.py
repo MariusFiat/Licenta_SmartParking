@@ -126,7 +126,7 @@ def setup_auth_trigger(conn, cur):
     print("The Auth trigger was created succesfully!")
 
 def insert_default_available_slots(conn, cur):
-    cur.execute("DELETE FROM slots;")
+    cur.execute("TRUNCATE TABLE slots RESTART IDENTITY CASCADE;") # Clear existing slots and reset ID sequence
     conn.commit()
     
     insert_query = """
