@@ -318,6 +318,39 @@ def calculate_the_taxes():
     
     cur.close()
     conn.close()
+    
+def calculate_the_parking_occupancy_rate():
+    conn = None
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+
+        cur.execute("SELECT COUNT(*) FROM slots WHERE parking_id = 1;")
+        total_slots_result = cur.fetchone()
+        total_slots = total_slots_result[0] if total_slots_result else 0
+
+        cur.execute("SELECT COUNT(*) FROM slots WHERE parking_id = 1 AND status NOT IN ('FREE', 'BLOCKED');")
+        occupied_slots_result = cur.fetchone()
+        occupied_slots = occupied_slots_result[0] if occupied_slots_result else 0
+
+        insert_query = """
+            INSERT INTO parking_history (parking_id, recorded_at, occupied_slots, total_slots)
+            VALUES (1, NOW(), %s, %s);
+        """
+        cur.execute(insert_query, (occupied_slots, total_slots))
+        conn.commit()
+
+        print(f"Parking history recorded successfully! Occupancy: {occupied_slots}/{total_slots}")
+        
+        return occupied_slots, total_slots
+
+    except Exception as e:
+        print(f"Error at recording parking history: {e}")
+        return -1, -1
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
 
 # Method that creates a reservation started by a mobile request
 def make_reservation(user_id, car_plate, slot): # I HAVE TO ADD A CUSTOM START_TIMESTAMP
