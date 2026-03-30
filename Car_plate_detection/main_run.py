@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Database_Scripts.supabase_base_functions import check_plate_in_the_reservation_table
 from Database_Scripts.supabase_base_functions import check_exit_status
-from Database_Scripts.background_tasks import calculate_the_taxes_scheduled_task
+from Database_Scripts.background_tasks import calculate_the_parking_occupancy_rate_scheduled_task, calculate_the_taxes_scheduled_task
 
 def log(msg):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
@@ -114,6 +114,10 @@ def main():
     #Update tax field daemon thread
     Tax_Thread = Thread(target = calculate_the_taxes_scheduled_task, daemon = True) #This task is a main helper, it must die when the main thread stops.
     Tax_Thread.start()
+    
+    #Occupancy rate update thread
+    Occupancy_Thread = Thread(target = calculate_the_parking_occupancy_rate_scheduled_task, daemon = True)
+    Occupancy_Thread.start()
 
     send_init_sequence()
 
