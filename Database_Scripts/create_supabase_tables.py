@@ -269,7 +269,7 @@ def create_the_update_future_reservation_function(conn, cur):
         -- 3. Search for an available slot that does not have overlaps (excluding the current reservation)
         SELECT id INTO v_new_slot_id
         FROM slots s
-        WHERE s.slot_type = v_sub_type
+        WHERE s.slot_type = v_sub_type and s.status = 'FREE'
         AND NOT EXISTS (
             SELECT 1 FROM reservation r
             WHERE r.slot = s.id AND r.id != p_reservation_id
