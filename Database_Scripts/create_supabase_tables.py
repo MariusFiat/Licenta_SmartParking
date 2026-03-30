@@ -134,7 +134,7 @@ def insert_default_available_slots(conn, cur):
         )
         VALUES (%s, %s, %s);
     """
-    for i in range(1, 5):
+    for i in range(1, 6):
         if i <= 3:
             record_to_insert = ('FREE', 'EMPLOYEE', 1)
         else:
