@@ -9,21 +9,77 @@
 #include "lights_controller.h"
 #include "shared_resources.h"
 
-void test_io_Expander(void);
+#define NUMBER_OF_LIGHTS 13
+/* Leds that are connected to the PCF with slave address 0x38 */
+#define LED0 0
+#define LED1 1
+#define LED2 2
+#define LED3 3
+#define LED4 4
+#define LED5 5
+#define LED6 6
+#define LED7 7
 
-void lights_controller_task(void* pvParams){
+/* Leds that are connected to the PCF with slave address 0x39 */
+#define LED8 0
+#define LED9 1
+#define LED10 2
+#define LED11 3
+#define LED12 4
+#define LED13 5
+#define LED14 6 // Will be used for detection
+#define LED15 7 // Will be used for detection
 
-    // Inițializare I2C1
+#define ALL_OFF 0xFF
+#define ALL_ON 0xFF
+#define FIRST_TREE_ALWAYS_ON 2
+#define TURN_ON(data,pos) data &= ~(1<<pos)
+#define TURN_OFF(data,pos) data |= 1 << pos
+#define ADD_SLOT_OFFSET(slot) slot = slot + FIRST_TREE_ALWAYS_ON
+#define TURN_OFF_DELAY 20000
+
+/* Local variables */
+static uint8_t leds_status[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /* This will be an array that will contain the number of references that needs each led. */
+
+/* Local functions */
+static void test_io_Expander(void);
+void vTimerTask_turn_off_lights(TimerHandle_t xTimer);
+static void update_lights_status(uint8_t, uint8_t*, uint8_t*, int8_t);
+
+void init_lights_controller(){
+        // Inițializare I2C1
     i2c_init(I2C_PORT, 100 * 1000);
     gpio_set_function(I2C_SDA_LIGHTS, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL_LIGHTS, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA_LIGHTS);
     gpio_pull_up(I2C_SCL_LIGHTS);
-    
+}
+
+void lights_controller_task(void* pvParams){
     while(true){
         test_io_Expander();
 
         vTaskDelay(pdMS_TO_TICKS(TASK_DELAY));
+    }
+}
+
+static void update_lights_status(uint8_t slot, uint8_t* data_slave_0, uint8_t* data_slave_1, int8_t value){
+    ADD_SLOT_OFFSET(slot); /* First three reds will be on for every slot that is selected. */
+
+    for(int i = 0; i <= slot; i++){ /* This section needs a mutex. */
+        leds_status[i] += value; /* Mark this led as on. */
+    }
+
+    /* Check all leds that needs to be on. */
+    for(int i = 0; i <= 13; i++){
+        if(leds_status[i] > 0){
+            if(i > 7){
+                TURN_ON(*data_slave_1, i-8);
+            }
+            else{
+                TURN_ON(*data_slave_0, i);
+            }
+        }
     }
 }
 
@@ -32,25 +88,66 @@ void turn_on_lights(uint8_t slot){
         This task wants to turn on a list of light from the pakring entry to the assigned parking slot. 
         This must be aceived without disturbind the existing commands.
     */
+    uint8_t data_slave_0 = ALL_OFF, data_slave_1 = ALL_OFF;
+
+    update_lights_status(slot,&data_slave_0, &data_slave_1, 1);
+
+    /* Send the turn on lights signal on the i2c bus. */
+    i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &data_slave_0, 1, false); /* IC slave 0 */
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &data_slave_1, 1, false); /* IC slave 1 */
+
+    int voidCastSlot = slot;
+    /* Create a new timerTask that will be triggered after 20 secods and executes the turn off function.*/
+    TimerHandle_t xTimerSlot = xTimerCreate(
+        "TurnOffLightTimer",
+        pdMS_TO_TICKS(TURN_OFF_DELAY),
+        pdFALSE,
+        (void*) voidCastSlot,
+        vTimerTask_turn_off_lights
+    );
+
+    if(xTimerSlot != NULL){
+        xTimerStart(xTimerSlot, 0);
+    }
 }
 
-void turn_off_lights(uint8_t slot){
+void vTimerTask_turn_off_lights(TimerHandle_t xTimer){ //This will be a timer task that will be triggered after x seconds. It's started by the turn_on_function
+    int slot = (int)pvTimerGetTimerID(xTimer); /* The parameter for this task represents the slot number.*/
 
+    uint8_t data_slave_0 = ALL_OFF, data_slave_1 = ALL_OFF;
+
+    update_lights_status(slot,&data_slave_0, &data_slave_1, -1);
+
+    /* Send the turn on lights signal on the i2c bus. */
+    i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &data_slave_0, 1, false); /* IC slave 0 */
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &data_slave_1, 1, false); /* IC slave 1 */
+
+    xTimerDelete(xTimer, 0);
 }
 
-void test_io_Expander(void){
-    uint8_t val_on = 0x0; 
-    uint8_t val_off = 0xFF;
+static void test_io_Expander(void){
+    uint8_t val_on = ALL_ON; 
+    uint8_t val_off = ALL_OFF;
 
     printf("Start test blink P0 la 100ms...\n");
 
-    while(true) {
-        i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_on, 1, false);
+    uint8_t data = ALL_OFF;
 
-        vTaskDelay(pdMS_TO_TICKS(500));
-
-        i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &val_off, 1, false);
-
-        vTaskDelay(pdMS_TO_TICKS(500));
+    for(int i = 0; i <= 3; i++) {
+        TURN_ON(data,i);
     }
+        
+    i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &data, 1, false);
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_on, 1, false);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    for(int i = 0; i <= 3; i++) {
+        TURN_OFF(data,i);
+    }
+
+    i2c_write_blocking(I2C_PORT, PCF_0_ADDR, &data, 1, false);
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_off, 1, false);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
 }
