@@ -194,10 +194,11 @@ def create_the_make_reservation_function(conn, cur):
             RAISE EXCEPTION 'User or subscription not found.';
         END IF;
 
-        -- 2. Search for an available slot that does not have overlaps
+        -- 2. Search for an available slot that does not have overlaps AND is FREE
         SELECT id INTO v_slot_id
         FROM slots s
-        WHERE s.slot_type = v_sub_type
+        WHERE s.slot_type = v_sub_type 
+        AND s.status = 'FREE' 
         AND NOT EXISTS (
             SELECT 1
             FROM reservation r
