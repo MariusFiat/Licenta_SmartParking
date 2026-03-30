@@ -125,13 +125,16 @@ def setup_auth_trigger(conn, cur):
     print("The Auth trigger was created succesfully!")
 
 def insert_default_available_slots(conn, cur):
+    cur.execute("DELETE FROM slots;")
+    conn.commit()
+    
     insert_query = """
         INSERT INTO slots (
             status, slot_type, parking_id
         )
         VALUES (%s, %s, %s);
     """
-    for i in range(1, 10):
+    for i in range(1, 5):
         if i <= 3:
             record_to_insert = ('FREE', 'EMPLOYEE', 1)
         else:
