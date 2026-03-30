@@ -306,6 +306,21 @@ def create_the_update_future_reservation_function(conn, cur):
     conn.commit()
     print("The 'update_future_reservation' function was created succesfully!")
     
+def create_parking_history_table(conn, cur):
+    create_table_query = """
+        CREATE TABLE IF NOT EXISTS parking_history (
+            id SERIAL PRIMARY KEY,
+            parking_id INTEGER REFERENCES parking_details(id) ON DELETE CASCADE,
+            recorded_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            occupied_slots INTEGER NOT NULL,
+            total_slots INTEGER NOT NULL
+        );
+    """
+    cur.execute(create_table_query)
+    conn.commit()
+    print("The table 'parking_history' was created succesfully!")
+    
+
 def create_database_tables():
     try:
         conn = psycopg2.connect(DB_URL)
@@ -323,6 +338,7 @@ def create_database_tables():
         insert_default_available_slots(conn, cur)
         create_the_make_reservation_function(conn, cur)
         create_the_update_future_reservation_function(conn, cur)
+        create_parking_history_table(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")
