@@ -8,6 +8,9 @@
 #define ENTRY_SENSOR 0  /* IR sensor for vehicle detection at the parking entry. */
 #define EXIT_SENSOR 1 /* IR sensor for vehicle detection at the parking exit. */
 
+#define ENTRY_SAFETY_SENSOR 2
+#define EXIT_SAFETY_SENSOR 3
+
 #define PWM_BARRIER_ENTRY 16 
 #define PWM_BARRIER_EXIT 17
 
