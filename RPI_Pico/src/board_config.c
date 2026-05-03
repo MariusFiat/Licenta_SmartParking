@@ -29,7 +29,9 @@ static void init_board_normal(){
 void init_board(){
     stdio_init_all();
 
+#if MCU_MODE == MCU_MODE_RUNNING
     init_lights_controller();
+#endif
 
     #if USE_PICO_WH == 1
         init_board_wh();

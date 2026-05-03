@@ -1,6 +1,12 @@
 #ifndef __BOARD_CONFIG_H
 #define __BOARD_CONFIG_H
 
+//* ---- MCU MODE ----
+#define MCU_MODE_RUNNING 0
+#define MCU_MODE_TEST 1
+#define MCU_MODE MCU_MODE_TEST
+//* ---- MCU MODE ----
+
 #define USE_PICO_WH 1 //Board type, pico wifi or not.
 #define TASK_DELAY 10
 
