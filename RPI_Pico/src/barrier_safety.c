@@ -11,8 +11,17 @@
 void checkEntry();
 void checkExit();
 
+void init_function(void){
+    gpio_init(ENTRY_SAFETY_SENSOR);
+    gpio_set_dir(ENTRY_SAFETY_SENSOR, GPIO_IN);
+    gpio_init(EXIT_SAFETY_SENSOR);
+    gpio_set_dir(EXIT_SAFETY_SENSOR, GPIO_IN);
+}
+
 void barrier_safety_check(void* pvParams){
     (void) pvParams;
+
+    init_function();
 
     while(1){
         checkEntry();
@@ -24,7 +33,7 @@ void barrier_safety_check(void* pvParams){
 void checkEntry() {
     if (xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0) == pdTRUE) {
         
-        bool is_car_still_there = !gpio_get(ENTRY_SENSOR);
+        bool is_car_still_there = !gpio_get(ENTRY_SENSOR) || !gpio_get(ENTRY_SAFETY_SENSOR);
 
         if (is_car_still_there) {
             /* Do nothing */
@@ -42,7 +51,7 @@ void checkEntry() {
 
 void checkExit(){
     if(xSemaphoreTake(xSemaphore_Barrier_Safety_Exit, 0) == pdTRUE){
-         bool is_car_still_there = !gpio_get(EXIT_SENSOR);
+         bool is_car_still_there = !gpio_get(EXIT_SENSOR) || !gpio_get(EXIT_SAFETY_SENSOR);
 
         if(is_car_still_there){
             /* The car is still in the barrier area. Do nothing. */

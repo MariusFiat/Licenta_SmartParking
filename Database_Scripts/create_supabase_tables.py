@@ -1,11 +1,14 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
+import csv
 
 # Load the .env variables
 load_dotenv()
 
 DB_URL = os.getenv("DB_URL")
+
+NUMBER_OF_SLOTS = 5
 
 # We define a constant for the guest user ID (all zeros UUID)
 UNKNOWN_USER_UUID = "00000000-0000-0000-0000-000000000000"
@@ -125,13 +128,16 @@ def setup_auth_trigger(conn, cur):
     print("The Auth trigger was created succesfully!")
 
 def insert_default_available_slots(conn, cur):
+    cur.execute("TRUNCATE TABLE slots RESTART IDENTITY CASCADE;") # Clear existing slots and reset ID sequence
+    conn.commit()
+    
     insert_query = """
         INSERT INTO slots (
             status, slot_type, parking_id
         )
         VALUES (%s, %s, %s);
     """
-    for i in range(1, 10):
+    for i in range(1, NUMBER_OF_SLOTS + 1):
         if i <= 3:
             record_to_insert = ('FREE', 'EMPLOYEE', 1)
         else:
@@ -141,12 +147,15 @@ def insert_default_available_slots(conn, cur):
     print("The slots were added to the parking!")
 
 def insert_initial_parking_details(conn, cur):
+    cur.execute("TRUNCATE TABLE parking_details RESTART IDENTITY CASCADE;") # Clear existing parking details and reset ID sequence
+    conn.commit()
+    
     insert_query = """
         INSERT INTO parking_details (id, pricing, number_of_slots, slots)
         VALUES (%s, %s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
     """
-    record_to_insert = (1, 3.0, 10, 10)
+    record_to_insert = (1, 3.0, NUMBER_OF_SLOTS, NUMBER_OF_SLOTS)
     
     cur.execute(insert_query, record_to_insert)
     conn.commit()
@@ -191,10 +200,11 @@ def create_the_make_reservation_function(conn, cur):
             RAISE EXCEPTION 'User or subscription not found.';
         END IF;
 
-        -- 2. Search for an available slot that does not have overlaps
+        -- 2. Search for an available slot that does not have overlaps AND is FREE
         SELECT id INTO v_slot_id
         FROM slots s
-        WHERE s.slot_type = v_sub_type
+        WHERE s.slot_type = v_sub_type 
+        AND s.status = 'FREE' 
         AND NOT EXISTS (
             SELECT 1
             FROM reservation r
@@ -269,7 +279,7 @@ def create_the_update_future_reservation_function(conn, cur):
         -- 3. Search for an available slot that does not have overlaps (excluding the current reservation)
         SELECT id INTO v_new_slot_id
         FROM slots s
-        WHERE s.slot_type = v_sub_type
+        WHERE s.slot_type = v_sub_type and s.status = 'FREE'
         AND NOT EXISTS (
             SELECT 1 FROM reservation r
             WHERE r.slot = s.id AND r.id != p_reservation_id
@@ -302,6 +312,49 @@ def create_the_update_future_reservation_function(conn, cur):
     conn.commit()
     print("The 'update_future_reservation' function was created succesfully!")
     
+    
+#MOCK data generation and insertion for parking_history
+def create_parking_history_table(conn, cur):
+    create_table_query = """
+        CREATE TABLE IF NOT EXISTS parking_history (
+            id SERIAL PRIMARY KEY,
+            parking_id INTEGER REFERENCES parking_details(id) ON DELETE CASCADE,
+            recorded_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            occupied_slots INTEGER NOT NULL,
+            total_slots INTEGER NOT NULL
+        );
+    """
+    cur.execute(create_table_query)
+    conn.commit()
+    print("The table 'parking_history' was created succesfully!")
+    
+def insert_parking_history_from_csv(conn, cur):
+    cur.execute("DELETE FROM parking_history;")
+    conn.commit()
+
+    filename = 'parking_history_data.csv'
+    insert_query = """
+        INSERT INTO parking_history (
+            parking_id, recorded_at, occupied_slots, total_slots
+        )
+        VALUES (%s, %s, %s, %s);
+    """
+    
+    try:
+        with open(filename, mode='r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            
+            for row in reader:
+                cur.execute(insert_query, row)
+                
+            conn.commit()
+            print(f"Historical data from '{filename}' inserted into 'parking_history' table!")
+    except FileNotFoundError:
+        print(f"File '{filename}' not found. Run generate_csv_data.py first.")
+    except Exception as e:
+        print(f"Error during historical data insertion: {e}")
+
 def create_database_tables():
     try:
         conn = psycopg2.connect(DB_URL)
@@ -319,6 +372,8 @@ def create_database_tables():
         insert_default_available_slots(conn, cur)
         create_the_make_reservation_function(conn, cur)
         create_the_update_future_reservation_function(conn, cur)
+        create_parking_history_table(conn, cur)
+        insert_parking_history_from_csv(conn, cur)
 
     except Exception as e:
         print(f"Error at table creation: {e}")

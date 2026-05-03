@@ -11,3 +11,5 @@ rm_build:
 load_u2f:
 	picotool load $(FILE) -x -f 
 	
+clean_build:
+	rm -rf build
