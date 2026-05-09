@@ -12,6 +12,7 @@
 #include "servo.h"
 #include "barrier_safety.h"
 #include "lights_controller.h"
+#include "brightness_module.h"
 
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/
@@ -39,6 +40,7 @@ int main()
 {
     init_board();
 
+#if MCU_MODE == MCU_MODE_RUNNING
     create_resources();
     block_until_init_signal_was_received();
 
@@ -54,6 +56,22 @@ int main()
 
     printf("%s", "FreeRTOS has run out of RAM memory!");
     while(1){};
+
+#elif MCU_MODE == MCU_MODE_TEST
+
+    uint8_t val = 0;
+    x_adc_init();
+
+    while(1){
+        uint16_t measured_value = x_read_ambient_light_once();
+        printf("Measured_val = %d\r\n", measured_value);
+
+        val = !val;
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, val); 
+
+        sleep_ms(1000);
+    }
+#endif
 }
 
 static void create_resources(){
