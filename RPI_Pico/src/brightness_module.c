@@ -13,9 +13,9 @@
 #include "task.h"   
 #include "hardware/i2c.h"
 
+#include "board_config.h"
 #include "brightness_module.h"
 
-#define xHW_REG32(addr) (*(volatile uint32_t *)(addr))
 #define BRIGHNESS_SENSOR_CHANNEL_0 0 /* ADC channel for GPIO26 */
 #define BRIGHNESS_SENSOR_CHANNEL_1 1 /* ADC channel for GPIO27 */
 #define ENABLED_CHANNELS BRIGHNESS_SENSOR_CHANNEL_0
@@ -59,17 +59,12 @@ void x_adc_init_temp_measurement(void){
 
 }
 
-void x_dma_init(void){
-    //TODO: To be implemented
-}
 
 void x_timer_init(void){
     //TODO: To be implemented
 }
 
 uint16_t x_read_ambient_light_once(){
-    //TODO: To be implemented
-
     /* Start one conversion */
     xHW_REG32(x_ADC_CS_REG) |= (1 << x_ADC_START_ONCE_BIT);
 
