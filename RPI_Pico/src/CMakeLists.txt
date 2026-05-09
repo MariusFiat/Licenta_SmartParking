@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME}
     barrier_safety.c
     lights_controller.c
     brightness_module.c
+    mcal/dma_if.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
