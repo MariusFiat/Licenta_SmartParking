@@ -31,6 +31,9 @@
 /*Board hardware init functions*/
 void init_board();
 
+/* Register access */
+#define xHW_REG32(addr) (*(volatile uint32_t *)(addr))
+
 /* Board hardware registers and addresses */
 #define x_IO_BANK0_BASE                       (0x40014000) /* Base address for IO Bank 0 */
 
