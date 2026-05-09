@@ -34,6 +34,10 @@ void init_board();
 /* Register access */
 #define xHW_REG32(addr) (*(volatile uint32_t *)(addr))
 
+/* Standard return types */
+#define RET_OK 0
+#define RET_NOK 1
+
 /* Board hardware registers and addresses */
 #define x_IO_BANK0_BASE                       (0x40014000) /* Base address for IO Bank 0 */
 
