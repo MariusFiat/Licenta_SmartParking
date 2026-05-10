@@ -13,6 +13,16 @@
 #define x_ADC_EN_BIT                          0  /* Power on ADC module bit */
 #define x_ADC_READY_BIT                       8  /* Ready flag for ADC module */
 #define x_ADC_START_ONCE_BIT                  2  /* Start conversion bit */
+#define x_ADC_START_MANY_BIT                  3  /* This bit enables continuous measurements one after the other. */
+#define x_ADC_RROBIN_BITS_OFFSET              16
+#define x_ADC_FCS_REG_OFFSET                  0x08
+#define x_ADC_FCS_REG                         (x_ADC_BASE + x_ADC_FCS_REG_OFFSET) /* ADC FIFO Control and status register*/
+#define x_ADC_DREQ_EN_BIT                     3
+#define x_ADC_FIFO_EN_BIT                     0
+#define x_ADC_DIV_REG_OFFSET                  0x10  
+#define x_ADC_DIV_REG                         (x_ADC_BASE + x_ADC_DIV_REG_OFFSET)
+#define x_ADC_DIV_INT_OFFSET                  8
+#define x_ADC_MAX_DIVIDER_VALUE                0xFFFF
 
 #define x_CLOCK_BASE_ADDR                     (0x40008000) /* The base address for CLOCK registers */
 #define x_CLOCK_ADC_OFFSET                    (0x60) 
@@ -26,5 +36,10 @@ uint16_t x_read_ambient_light_once();
 void x_adc_init(void);
 uint8_t x_adc_set_channels(uint8_t channel_mask);
 uint8_t x_adc_enable(void);
+void x_adc_start_many(void);
+uint8_t x_adc_set_rrobin(uint8_t channels_mask);
+void x_adc_enable_dreq(void);
+void x_adc_enable_fifo(void);
+uint8_t x_adc_set_divider(uint32_t divider);
 
 #endif /* __ADC_IF_H__ */

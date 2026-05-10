@@ -67,3 +67,41 @@ uint8_t x_adc_enable(void){
     retVal = RET_OK;
     return retVal;
 }
+
+void x_adc_start_many(void){
+    xHW_REG32(x_ADC_CS_REG) |= (1 << x_ADC_START_MANY_BIT);
+}
+
+uint8_t x_adc_set_rrobin(uint8_t channels_mask){
+    uint8_t retVal = RET_NOK;
+
+    if(channels_mask <= 0x01F){
+        xHW_REG32(x_ADC_CS_REG) &= ~(0x01F << x_ADC_RROBIN_BITS_OFFSET); /* Clear the RROBIN bits*/
+
+        xHW_REG32(x_ADC_CS_REG) |= (channels_mask << x_ADC_RROBIN_BITS_OFFSET);
+        retVal = RET_OK;
+    }
+
+    return retVal;
+}
+
+void x_adc_enable_dreq(void){
+    xHW_REG32(x_ADC_FCS_REG) |= (1 << x_ADC_DREQ_EN_BIT);
+}
+
+void x_adc_enable_fifo(void){
+    xHW_REG32(x_ADC_FCS_REG) |= (1 << x_ADC_EN_BIT);
+}
+
+uint8_t x_adc_set_divider(uint32_t divider){
+    uint8_t retVal = RET_NOK;
+    
+    if(divider <= 0xFFFF){
+        xHW_REG32(x_ADC_DIV_REG) = (divider << x_ADC_DIV_INT_OFFSET);
+        retVal = RET_OK;
+    }
+    else{
+        /* Invalid divider value */
+    }
+    return retVal;
+}
