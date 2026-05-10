@@ -62,6 +62,8 @@ int main()
 
     uint8_t val = 0;
     x_adc_init();
+    x_adc_set_channels(0x00);
+    x_adc_enable();
 
     while(1){
         uint16_t measured_value = x_read_ambient_light_once();

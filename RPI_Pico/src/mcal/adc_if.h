@@ -24,5 +24,7 @@
 //* Functions definition
 uint16_t x_read_ambient_light_once();
 void x_adc_init(void);
+uint8_t x_adc_set_channels(uint8_t channel_mask);
+uint8_t x_adc_enable(void);
 
 #endif /* __ADC_IF_H__ */

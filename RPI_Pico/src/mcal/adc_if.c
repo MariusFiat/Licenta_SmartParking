@@ -12,6 +12,8 @@
 
 #include "adc_if.h"
 
+#define ADC_ALL_CHANNELS_ENABLED                0x0F
+
 uint16_t x_read_ambient_light_once(){
     /* Start one conversion */
     xHW_REG32(x_ADC_CS_REG) |= (1 << x_ADC_START_ONCE_BIT);
@@ -38,14 +40,30 @@ void x_adc_init(void){
     xHW_REG32(x_RESET_REGISTER_BASE_ADDRESS) &= ~(1 << x_ADC_RESET_BIT); /* Deassert the reset for ADC */
     while((xHW_REG32(x_RESET_DONE_REG) & (1 << x_ADC_RESET_BIT)) == 0); /* Wait for the reset to complete */
 
+    /* At this moment, the adc is ready to be configured. */
+}
 
-    /* 3. Configure the ADC to read from the appropriate channels (GPIO26 and GPIO27), channel 0 and 1. */
-    //TODO: Here I have to configure both channel for measurement and the ROUNDROBBIN func.
-    xHW_REG32(x_ADC_CS_REG) &= ~(0x7 << x_AINSEL); //? Now just the channel 0 (GPIO26) is selected.
+uint8_t x_adc_set_channels(uint8_t channel_mask){
+    /* Configure the ADC to read from the specified channels based on the provided mask. */
+    uint8_t retVal = RET_NOK;
 
-    /* 4. Power on the ADC and wait for it to be ready before starting any conversions. */
+    if(channel_mask <= 0xF){
+        xHW_REG32(x_ADC_CS_REG) &= ~(0x7 << x_AINSEL); /* Clear the AINSEL field. */
+        xHW_REG32(x_ADC_CS_REG) |= (channel_mask << x_AINSEL);
+    }
+    else{
+        /* Invalid channel */
+    }
+
+    return retVal;
+}
+
+uint8_t x_adc_enable(void){
+    uint8_t retVal = RET_NOK;
+    
     xHW_REG32(x_ADC_CS_REG) |= (1 << x_ADC_EN_BIT);
     while((xHW_REG32(x_ADC_CS_REG) & (1 << x_ADC_READY_BIT)) == 0);
 
-    /* Now the ADC is ready for use. To start a new conversion, write to the ADC control register, the ADC_START bit. */
+    retVal = RET_OK;
+    return retVal;
 }
