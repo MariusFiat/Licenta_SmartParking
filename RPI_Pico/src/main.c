@@ -13,6 +13,7 @@
 #include "barrier_safety.h"
 #include "lights_controller.h"
 #include "brightness_module.h"
+#include "mcal/adc_if.h"
 
 /* Init queues */
 QueueHandle_t xQueue_Entry_Req = NULL; /* Queue declaration, in the same way in detect.c and uart.c*/

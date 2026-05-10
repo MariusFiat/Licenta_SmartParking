@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     lights_controller.c
     brightness_module.c
     mcal/dma_if.c
+    mcal/adc_if.c
 )
 
 # Spunem unde sunt fișierele de FreeRTOS pe care le-ai pus în lib
