@@ -48,6 +48,7 @@ void blink_built_in_led(void){
     static uint8_t val = 0;
 
     if(init == false){
+        init = true;
         gpio_init(25);
         gpio_set_dir(25, true); /* Set GPIO25 (the onboard LED) as output. */
     } else{
