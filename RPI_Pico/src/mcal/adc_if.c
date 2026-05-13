@@ -105,3 +105,12 @@ uint8_t x_adc_set_divider(uint32_t divider){
     }
     return retVal;
 }
+
+uint8_t x_adc_start_once(void){
+    uint8_t retVal = RET_NOK;
+
+    xHW_REG32(x_ADC_CS_REG) |= (1 << x_ADC_START_ONCE_BIT);
+
+    retVal = RET_OK;
+    return retVal;
+}

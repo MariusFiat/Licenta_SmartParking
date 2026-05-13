@@ -59,19 +59,18 @@ int main()
     while(1){};
 
 #elif MCU_MODE == MCU_MODE_TEST
-
-    uint8_t val = 0;
-    x_adc_init();
-    x_adc_set_channels(0x00);
-    x_adc_enable();
+    uint32_t brightness = 0;
+    static bool init = false;
 
     while(1){
-        uint16_t measured_value = x_read_ambient_light_once();
-        printf("Measured_val = %d\r\n", measured_value);
+        blink_built_in_led();
+        brightness = get_brightness();
+        printf("Val = %d\n", brightness);
 
-        val = !val;
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, val); 
-
+        if(init == false){
+            init = true;
+            init_brightness_submodules();
+        }
         sleep_ms(1000);
     }
 #endif

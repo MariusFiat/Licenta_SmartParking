@@ -121,7 +121,7 @@ uint8_t x_dma_set_chain_to(uint8_t chain_to_channel_number, uint8_t channel_numb
     uint8_t retVal = RET_NOK;
 
     if((channel_number < DMA_NUM_OF_CHANNELS) && (chain_to_channel_number < DMA_NUM_OF_CHANNELS)){
-        xHW_REG32(x_DMA_CH0_CTRL_REG) |= (channel_number << x_DMA_CH0_CTRL_CHAIN_TO_OFFSET);
+        xHW_REG32((x_DMA_CH0_CTRL_REG + x_DMA_CH0_CTRL_CHAIN_TO_OFFSET) + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) |= (channel_number << x_DMA_CH0_CTRL_CHAIN_TO_OFFSET);
         
         retVal = RET_OK;
     }

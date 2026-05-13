@@ -27,7 +27,7 @@
 //[..] and bcs of that, I can configure every channel with the same function + channel offset.
 
 //* Public functions */
-uint8_t x_dma_init(uint8_t channel_number);
+uint8_t x_dma_init(uint8_t channel_number);                                         /* Disable the reset and set registers to 0*/
 uint8_t x_dma_set_read_addr(uint32_t addr, uint8_t channel_number);
 uint8_t x_dma_set_write_addr(uint32_t addr, uint8_t channel_number);
 uint8_t x_dma_set_trans_count_and_data_size(uint32_t trans_count, uint8_t data_size, uint8_t channel_number);

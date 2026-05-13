@@ -22,7 +22,9 @@
 #define x_ADC_DIV_REG_OFFSET                  0x10  
 #define x_ADC_DIV_REG                         (x_ADC_BASE + x_ADC_DIV_REG_OFFSET)
 #define x_ADC_DIV_INT_OFFSET                  8
-#define x_ADC_MAX_DIVIDER_VALUE                0xFFFF
+#define x_ADC_MAX_DIVIDER_VALUE               0xFFFF
+#define x_ADC_FIFO_REG_OFFSET                 0x0C
+#define x_ADC_DREQ_THRESHOLD_OFFSET           24         
 
 #define x_CLOCK_BASE_ADDR                     (0x40008000) /* The base address for CLOCK registers */
 #define x_CLOCK_ADC_OFFSET                    (0x60) 
@@ -41,5 +43,6 @@ uint8_t x_adc_set_rrobin(uint8_t channels_mask);
 void x_adc_enable_dreq(void);
 void x_adc_enable_fifo(void);
 uint8_t x_adc_set_divider(uint32_t divider);
+uint8_t x_adc_start_once(void);
 
 #endif /* __ADC_IF_H__ */
