@@ -15,16 +15,31 @@
 #include "board_config.h"
 #include "dma_if.h"
 
+static uint8_t x_dma_disable_peripheral_reset(void){
+    uint8_t retVal = RET_NOK;
+
+    /* Disable the reset for DMA peripheral */
+    xHW_REG32(x_RESET_REGISTER_BASE_ADDRESS) &= ~(1 << DMA_RESET_BIT);
+
+    /* Waits for reset done flag to be set */
+    while((xHW_REG32(x_RESET_DONE_REG) & (1 << DMA_RESET_BIT)) == 0);
+
+    retVal = RET_OK;
+    return retVal;
+}
+
 uint8_t x_dma_init(uint8_t channel_number){
     uint8_t retVal = RET_NOK;
 
     /* Set all registers to 0. */
     if(channel_number < DMA_NUM_OF_CHANNELS){
-        xHW_REG32(x_DMA_CH0_READ_ADDR + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
-        xHW_REG32(x_DMA_CH0_WRITE_ADDR + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
-        xHW_REG32(x_DMA_CH0_TRANS_COUNT + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
+        if(x_dma_disable_peripheral_reset() == RET_OK){
+            xHW_REG32(x_DMA_CH0_READ_ADDR + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
+            xHW_REG32(x_DMA_CH0_WRITE_ADDR + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
+            xHW_REG32(x_DMA_CH0_TRANS_COUNT + (channel_number * x_DMA_CHANNEL_REGS_OFFSET)) = 0;
 
-        retVal = RET_OK;
+            retVal = RET_OK;
+        }
     } else{
         /* Invalid channel number*/
     }
@@ -99,5 +114,16 @@ uint8_t x_dma_enable_channel(uint8_t channel_number){
         retVal = RET_OK;
     }
 
+    return retVal;
+}
+
+uint8_t x_dma_set_chain_to(uint8_t chain_to_channel_number, uint8_t channel_number){
+    uint8_t retVal = RET_NOK;
+
+    if((channel_number < DMA_NUM_OF_CHANNELS) && (chain_to_channel_number < DMA_NUM_OF_CHANNELS)){
+        xHW_REG32(x_DMA_CH0_CTRL_REG) |= (channel_number << x_DMA_CH0_CTRL_CHAIN_TO_OFFSET);
+        
+        retVal = RET_OK;
+    }
     return retVal;
 }

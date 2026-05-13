@@ -18,6 +18,8 @@
 #define x_DMA_CH0_CTRL_DATA_SIZE_OFFSET         2                                   /* DATA_SIZE offset in CTRL reg*/
 #define x_DMA_CH0_CTRL_EN_BIT                   0                                   /* Enable bit offset in CTRL reg. Enables the channel that will start a new trasnfer when a TREQ is enabled. */
 #define x_DMA_CH0_CTRL_TREQ_OFFSET              15                                  /* TREQ offset in CTRL reg. This field sets the REQ source for a DMA transfer */
+#define DMA_RESET_BIT                           2
+#define x_DMA_CH0_CTRL_CHAIN_TO_OFFSET          11
 
 #define x_DMA_ADC_DREQ                          0x24                                /* TREQ value for ADC DMA request*/
 
@@ -31,5 +33,7 @@ uint8_t x_dma_set_write_addr(uint32_t addr, uint8_t channel_number);
 uint8_t x_dma_set_trans_count_and_data_size(uint32_t trans_count, uint8_t data_size, uint8_t channel_number);
 uint8_t x_dma_set_trigger_source(uint32_t trig_source, uint8_t channel_number);
 uint8_t x_dma_enable_channel(uint8_t channel_number);
+uint8_t x_dma_set_chain_to(uint8_t chain_to_channel_number, uint8_t channel_number);
+
 
 #endif /* __DMA_H */
