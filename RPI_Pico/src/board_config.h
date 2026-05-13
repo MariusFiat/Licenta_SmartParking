@@ -7,7 +7,7 @@
 #define MCU_MODE MCU_MODE_TEST
 //* ---- MCU MODE ----
 
-#define USE_PICO_WH 1 //Board type, pico wifi or not.
+#define USE_PICO_WH 0 //Board type, pico wifi or not.
 #define TASK_DELAY 10
 
 /* Pins declarations */
@@ -36,6 +36,9 @@
 
 /*Board hardware init functions*/
 void init_board();
+
+/* Board test functions */
+void blink_built_in_led(void);
 
 /* Register access */
 #define xHW_REG32(addr) (*(volatile uint32_t *)(addr))

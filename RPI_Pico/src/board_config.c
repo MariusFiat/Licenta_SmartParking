@@ -40,3 +40,20 @@ void init_board(){
     #endif
     //printf("%s", "The board was initialized!\n");
 }
+
+#if USE_PICO_WH == 0
+
+void blink_built_in_led(void){
+    static bool init = false;
+    static uint8_t val = 0;
+
+    if(init == false){
+        gpio_init(25);
+        gpio_set_dir(25, true); /* Set GPIO25 (the onboard LED) as output. */
+    } else{
+        gpio_put(25, val);
+        val = !val;
+    }
+}
+
+#endif
