@@ -24,7 +24,9 @@
 
 #define DMA_CHANNEL_SENSOR1_RAM 0 /* Channel that moves the sensor1 measured value into RAM*/
 #define DMA_RE_ARM_CHANNEL_SENSOR1 1 /* Channel that re-arm the DMA channel that reads the measured value for sensor 1*/
+#define TRANS_COUNT_VALUE 0xFFFFFFFF
 
+static uint32_t trans_count = TRANS_COUNT_VALUE;
 static uint32_t measured_value_sensor1 = 0;
 
 void init_brightness_submodules(void){
@@ -35,10 +37,15 @@ void init_brightness_submodules(void){
     x_dma_init(DMA_CHANNEL_SENSOR1_RAM);
     x_dma_set_read_addr((uint32_t)(x_ADC_BASE + x_ADC_FIFO_REG_OFFSET), DMA_CHANNEL_SENSOR1_RAM);
     x_dma_set_write_addr((uint32_t)&measured_value_sensor1, DMA_CHANNEL_SENSOR1_RAM);
-    x_dma_set_trans_count_and_data_size(1, sizeof(uint8_t), DMA_CHANNEL_SENSOR1_RAM);
+    x_dma_set_trans_count_and_data_size(trans_count, DMA_DATA_SIZE_2B, DMA_CHANNEL_SENSOR1_RAM);
     x_dma_set_trigger_source(x_DMA_ADC_DREQ, DMA_CHANNEL_SENSOR1_RAM);
+    x_dma_set_chain_to(DMA_RE_ARM_CHANNEL_SENSOR1, DMA_CHANNEL_SENSOR1_RAM);
 
     /* Init the re_arm channel for first dma_adc_ram channel */
+    x_dma_init(DMA_RE_ARM_CHANNEL_SENSOR1);
+    x_dma_set_trans_count_and_data_size(1, DMA_DATA_SIZE_4B, DMA_RE_ARM_CHANNEL_SENSOR1);
+    x_dma_set_read_addr((uint32_t)&trans_count, DMA_RE_ARM_CHANNEL_SENSOR1);
+    x_dma_set_write_addr((uint32_t)(x_DMA_CH0_ALIAS1_TRIGGER_REG), DMA_RE_ARM_CHANNEL_SENSOR1);
 
     /* Start DMA channels */
     x_dma_enable_channel(DMA_CHANNEL_SENSOR1_RAM);
@@ -47,10 +54,12 @@ void init_brightness_submodules(void){
     x_adc_init();
     x_adc_set_channels(ENABLED_CHANNELS);
     x_adc_enable_dreq();
+    x_adc_enable_fifo();
+    x_adc_set_divider(x_ADC_MAX_DIVIDER_VALUE);
     x_adc_enable();
 
     /* Start adc many conversions */
-    x_adc_start_once();
+    x_adc_start_many();
 }
 
 uint32_t get_brightness(void){

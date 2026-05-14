@@ -59,6 +59,7 @@ int main()
     while(1){};
 
 #elif MCU_MODE == MCU_MODE_TEST
+    uint32_t init_brightness = get_brightness();
     uint32_t brightness = 0;
     static bool init = false;
 
@@ -66,6 +67,7 @@ int main()
         blink_built_in_led();
         brightness = get_brightness();
         printf("Val = %d\n", brightness);
+        printf("Init val = %d\n", init_brightness);
 
         if(init == false){
             init = true;
