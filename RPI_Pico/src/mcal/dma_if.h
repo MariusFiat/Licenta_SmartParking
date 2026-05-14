@@ -14,6 +14,7 @@
 #define x_DMA_CH0_WRITE_ADDR                    (x_DMA_BASE_ADDRESS + 0x004)        /* The write address register for DMA channel 0 */
 #define x_DMA_CH0_TRANS_COUNT                   (x_DMA_BASE_ADDRESS + 0x008)        /* The register that contains the number of transfers for each DMA transfer sequence */
 #define x_DMA_CH0_CTRL_REG                      (x_DMA_BASE_ADDRESS + 0x00C)        /* Control and status register for DMA channel 0 */
+#define x_DMA_CH0_ALIAS1_TRIGGER_REG            (x_DMA_BASE_ADDRESS + 0x010 + 0x00C)
 
 #define x_DMA_CH0_CTRL_DATA_SIZE_OFFSET         2                                   /* DATA_SIZE offset in CTRL reg*/
 #define x_DMA_CH0_CTRL_EN_BIT                   0                                   /* Enable bit offset in CTRL reg. Enables the channel that will start a new trasnfer when a TREQ is enabled. */
@@ -34,6 +35,6 @@ uint8_t x_dma_set_trans_count_and_data_size(uint32_t trans_count, uint8_t data_s
 uint8_t x_dma_set_trigger_source(uint32_t trig_source, uint8_t channel_number);
 uint8_t x_dma_enable_channel(uint8_t channel_number);
 uint8_t x_dma_set_chain_to(uint8_t chain_to_channel_number, uint8_t channel_number);
-
+uint32_t x_dma_get_channel_x_ctrl_reg(uint8_t channel_number);
 
 #endif /* __DMA_H */
