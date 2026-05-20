@@ -4,7 +4,7 @@
 //* ---- MCU MODE ----
 #define MCU_MODE_RUNNING 0
 #define MCU_MODE_TEST 1
-#define MCU_MODE MCU_MODE_TEST
+#define MCU_MODE MCU_MODE_RUNNING
 //* ---- MCU MODE ----
 
 #define USE_PICO_WH 0 //Board type, pico wifi or not.

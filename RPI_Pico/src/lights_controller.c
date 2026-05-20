@@ -8,6 +8,7 @@
 #include "board_config.h"
 #include "lights_controller.h"
 #include "shared_resources.h"
+#include "brightness_module.h"
 
 #define NUMBER_OF_LIGHTS 13
 /* Leds that are connected to the PCF with slave address 0x38 */
@@ -37,6 +38,9 @@
 #define TURN_OFF(data,pos) data |= 1 << pos
 #define ADD_SLOT_OFFSET(slot) slot = slot + FIRST_TREE_ALWAYS_ON
 #define TURN_OFF_DELAY 20000
+
+/* Brightness threshold */
+#define BRIGHTNESS_THRESHOLD 2000 /* The actual value read by the ADC module*/
 
 /* Local variables */
 static uint8_t leds_status[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /* This will be an array that will contain the number of references that needs each led. */
@@ -88,6 +92,12 @@ void turn_on_lights(uint8_t slot){
         This task wants to turn on a list of light from the pakring entry to the assigned parking slot. 
         This must be aceived without disturbind the existing commands.
     */
+
+    /* Check the abmient brightness. If it's above the threshold, we won't turn on the lights. */
+    if(get_brightness() > BRIGHTNESS_THRESHOLD){
+        return; /* Do nothing. Ignore the request. */
+    }
+
     uint8_t data_slave_0 = ALL_OFF, data_slave_1 = ALL_OFF;
 
     update_lights_status(slot,&data_slave_0, &data_slave_1, 1);
