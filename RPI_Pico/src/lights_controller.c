@@ -96,7 +96,7 @@ void turn_on_lights(uint8_t slot){
     uint16_t brightness = get_brightness() & 0xFFFu;
 
     /* Check the abmient brightness. If it's under the threshold, we won't turn on the lights. */
-    if(brightness > BRIGHTNESS_THRESHOLD){
+    if(brightness < BRIGHTNESS_THRESHOLD){
         return; /* Do nothing. Ignore the request. */
     }
 

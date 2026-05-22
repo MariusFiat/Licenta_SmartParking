@@ -64,7 +64,6 @@ int main()
     static bool init = false;
 
     while(1){
-        blink_built_in_led();
         brightness = get_brightness();
         printf("Val = %d\n", brightness);
         printf("Init val = %d\n", init_brightness);
