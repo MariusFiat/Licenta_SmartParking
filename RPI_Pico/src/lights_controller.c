@@ -93,7 +93,8 @@ void turn_on_lights(uint8_t slot){
         This must be aceived without disturbind the existing commands.
     */
 
-    uint16_t brightness = get_brightness() & 0xFFFu;
+    uint32_t brightness = get_brightness();
+    send_log_message("Turn_on_lights brightness value", brightness);
 
     /* Check the abmient brightness. If it's under the threshold, we won't turn on the lights. */
     if(brightness < BRIGHTNESS_THRESHOLD){

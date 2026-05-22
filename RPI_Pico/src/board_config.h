@@ -39,6 +39,7 @@ void init_board();
 
 /* Board test functions */
 void blink_built_in_led(void);
+void send_log_message(char* msg, uint32_t val);
 
 /* Register access */
 #define xHW_REG32(addr) (*(volatile uint32_t *)(addr))

@@ -42,6 +42,9 @@ def serial_handler():
             continue
         
         print(f"Command received : {line}")
+        if "[RP2040]" in line:
+                continue
+
         print(f"Line[0] : {line[0]}")
         
         if serialQueue.full() == False:

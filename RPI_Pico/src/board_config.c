@@ -6,9 +6,11 @@
 
 #include "board_config.h"
 #include "lights_controller.h"
+#include "brightness_module.h"
 
 static void common_hardware_init(){
-    /* To be implemented. */
+    init_brightness_submodules(); /* Initialize the brightness submodules! DMA + ADC*/
+    init_lights_controller();
 }
 
 static void init_board_wh(){
@@ -28,10 +30,6 @@ static void init_board_normal(){
 
 void init_board(){
     stdio_init_all();
-
-#if MCU_MODE == MCU_MODE_RUNNING
-    init_lights_controller();
-#endif
 
     #if USE_PICO_WH == 1
         init_board_wh();
@@ -58,3 +56,7 @@ void blink_built_in_led(void){
 }
 
 #endif
+
+void send_log_message(char* msg, uint32_t val){
+    printf("[RP2040]: %s -> %d\n", msg, val);
+}
