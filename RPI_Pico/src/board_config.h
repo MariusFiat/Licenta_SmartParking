@@ -1,7 +1,13 @@
 #ifndef __BOARD_CONFIG_H
 #define __BOARD_CONFIG_H
 
-#define USE_PICO_WH 1 //Board type, pico wifi or not.
+//* ---- MCU MODE ----
+#define MCU_MODE_RUNNING 0
+#define MCU_MODE_TEST 1
+#define MCU_MODE MCU_MODE_RUNNING
+//* ---- MCU MODE ----
+
+#define USE_PICO_WH 0 //Board type, pico wifi or not.
 #define TASK_DELAY 10
 
 /* Pins declarations */
@@ -30,5 +36,38 @@
 
 /*Board hardware init functions*/
 void init_board();
+
+/* Board test functions */
+void blink_built_in_led(void);
+void send_log_message(char* msg, uint32_t val);
+
+/* Register access */
+#define xHW_REG32(addr) (*(volatile uint32_t *)(addr))
+
+/* Standard return types */
+#define RET_OK 0
+#define RET_NOK 1
+
+/* Board hardware registers and addresses */
+#define x_IO_BANK0_BASE                       (0x40014000) /* Base address for IO Bank 0 */
+
+/* Reset register that enables the ADC peripheral */
+#define x_RESET_REGISTER_BASE_ADDRESS         (0x4000C000)
+#define x_RESET_DONE_OFFSET                   (0x08) /* Offset for the reset done register */
+#define x_RESET_DONE_REG                      (x_RESET_REGISTER_BASE_ADDRESS + x_RESET_DONE_OFFSET) /* Reset done register */
+
+#define x_GPIO26_STATUS_REG_OFFSET            (0x0D0) /* Status register offset for GPIO26 */
+#define x_GPIO26_CTRL_REG_OFFSET              (0x0D4) /* Control register offset for GPIO26 */
+
+#define x_GPIO27_STATUS_REG_OFFSET            (0x0D8) /* Status register offset for GPIO27 */
+#define x_GPIO27_CTRL_REG_OFFSET              (0x0DC) /* Control register offset for GPIO27 */
+
+#define x_PADS_BANK0_BASE                     (0x4001C000) /* Base address for Pads Bank 0 */
+#define x_GPIO26_PAD_CTRL_OFFSET              (0x6C) 
+#define x_GPIO27_PAD_CTRL_OFFSET              (0x70) 
+#define x_GPIO26_PAD_CTRL_REG                 (x_PADS_BANK0_BASE + x_GPIO26_PAD_CTRL_OFFSET)  /* Pad control register offset for GPIO26 */
+#define x_GPIO27_PAD_CTRL_REG                 (x_PADS_BANK0_BASE + x_GPIO27_PAD_CTRL_OFFSET)  /* Pad control register offset for GPIO27 */
+#define x_IE_BIT                              6 
+#define x_OD_BIT                              7
 
 #endif

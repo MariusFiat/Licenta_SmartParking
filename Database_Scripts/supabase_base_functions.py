@@ -26,11 +26,12 @@ def check_plate_in_the_reservation_table(plate):
 
     if result and result[4] != 'STATUS_CLOSED':
         # This means that the car has reservation and now I have to check if is an emplyee or a standard customer
-        print(f"The car with the plate number: {plate} was found in the db.")
+        print(f"[System RP5]: The car with the plate number: {plate} was found in the db.")
         checks = check_plate_status_and_subscription_type(result) # Check the plate to see if this car plate is booked for an employee or it's just a simple customer that wants to park
         if checks == True:
             return result[3] # Return the assigned slot.
         else:
+            print("[System RP5]: This car is already parked!\n")
             return -1 # Access denied (maybe the car is already inside and the plate is used again? or maybe the car is trying to enter before the start_timestamp for this reservation)
     else:
         #Check if this car_plate is associated with an existing account (check if this plate is present in the 'car' table)
@@ -39,18 +40,18 @@ def check_plate_in_the_reservation_table(plate):
         if car:
             owner_details = get_user_details(car[2])
             if owner_details[3] == 'EMPLOYEE':
-                print(f"The car with the plate number: {plate} was found in the db and is associated with an employee account!")
+                print(f"[System RP5]: The car with the plate number: {plate} was found in the db and is associated with an employee account!")
             else:
-                print(f"The car with the plate number: {plate} was found in the db and is associated with a standard account!")
+                print(f"[System RP5]: The car with the plate number: {plate} was found in the db and is associated with a standard account!")
                 
             assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='STANDARD')
             
             if assigned_slot != -1:
-                print(f"The assigned parking slot is: {assigned_slot}")
+                print(f"[System RP5]: The assigned parking slot is: {assigned_slot}")
             else:
-                print(f"The car with the plate number: {plate} was found in the db and is associated with an account, but there are no more parking slots available!")
+                print(f"[System RP5]: The car with the plate number: {plate} was found in the db and is associated with an account, but there are no more parking slots available!")
         else:  
-            print(f"Unknown car")
+            print(f"[System RP5]: Unknown car")
             # Add the car to the parking db and set the NO_SUBSCRIPTION status
             # At the exit, this plate will have to pay the tax
             # id_owner = UNKNOWN_USER_UUID is the default user_id for unknown car_plates!!!!!
@@ -71,7 +72,7 @@ def check_plate_status_and_subscription_type(result):
         start_time = result[7]
 
     if status == 'STATUS_PARKED':
-        print("This reservation is already used!")
+        print("[System RP5]: This reservation is already used!")
         return False
 
     # If this car has a reservation, just update the reservation status and set the entry time
@@ -79,7 +80,7 @@ def check_plate_status_and_subscription_type(result):
     #Check if this is the correct hour for this reservation (if the car is trying to enter before the start_timestamp, we have to deny the access)
     if status == 'STATUS_BOOKED':
             if datetime.now() < start_time:
-                print("This car is trying to enter before the start_timestamp for this reservation! Access denied!")
+                print("[System RP5]: This car is trying to enter before the start_timestamp for this reservation! Access denied!")
                 return False
             else:
                 return update_car_status(car_plate, 'STATUS_PARKED') and set_the_entry_time(car_plate)
@@ -111,12 +112,12 @@ def insert_new_car(car_plate, id_owner, status, parking_tax, slot_type = 'STANDA
             # Save
             conn.commit()
             
-            print(f"The car with the plate {car_plate} was succesfully added.")
+            print(f"[System RP5]: The car with the plate {car_plate} was succesfully added.")
         else:
-            print(f"The car with plate {car_plate} can not be accepted! No more standard parking slots!")
+            print(f"[System RP5]: The car with plate {car_plate} can not be accepted! No more standard parking slots!")
 
     except Exception as e:
-        print(f"Error at the inserting new car stage: {e}")
+        print(f"[System RP5]: Error at the inserting new car stage: {e}")
     finally:
         if conn:
             cur.close()
@@ -140,11 +141,11 @@ def update_car_status(car_plate, new_status):
 
         # Verify if the car exists in the db
         if cur.rowcount == 0:
-            print(f"This car plate: {car_plate} wasn't found.")
+            print(f"[System RP5]: This car plate: {car_plate} wasn't found.")
             return False
         else:
             conn.commit()
-            print(f"The status of the car: {car_plate} was updated in: {new_status}")
+            print(f"[System RP5]: The status of the car: {car_plate} was updated in: {new_status}")
 
     except Exception as e:
         print(f"Eroare la update: {e}")
@@ -187,7 +188,7 @@ def set_the_entry_time(car_plate):
 
         conn.commit()
 
-        print(f"The entry_timestamp for plate: {car_plate} was set!")
+        print(f"[System RP5]: The entry_timestamp for plate: {car_plate} was set!")
     
     except Exception as e:
         print(f"Error at entry_timestamp update!")
@@ -227,7 +228,7 @@ def check_exit_status(plate):
 
                     return update_car_status(plate, 'STATUS_CLOSED')
                 else: 
-                    print(f"The car with car plate {plate} has taxes unpaid!")
+                    print(f"[System RP5]: The car with car plate {plate} has taxes unpaid!")
                     return False
         else:
             # Unknown customer, he can pay his taxes via mobile app without account, just with the car plate nmber
@@ -235,7 +236,9 @@ def check_exit_status(plate):
                 # Release the parking slot
                 update_parking_slot_status(result[3], 'FREE')
                 return update_car_status(plate, 'STATUS_CLOSED')
-        
+    else:
+        print("[System RP5]: This car wasn't found! There is no entry record for this plate number!")
+        return False
     cur.close()
     conn.close()
 
@@ -269,7 +272,7 @@ def update_parking_slot_status(slot_number, new_status):
         cur.execute(update_query, (new_status, slot_number))
 
         conn.commit()
-        print(f"The status for slot with number : {slot_number} was updated at status: {new_status}")
+        print(f"[System RP5]: The status for slot with number : {slot_number} was updated at status: {new_status}")
     except Exception as e:
         print("Error at parking_slot status update!")
     finally:
@@ -340,7 +343,7 @@ def calculate_the_parking_occupancy_rate():
         cur.execute(insert_query, (occupied_slots, total_slots))
         conn.commit()
 
-        print(f"Parking history recorded successfully! Occupancy: {occupied_slots}/{total_slots}")
+        print(f"[System RP5]: Parking history recorded successfully! Occupancy: {occupied_slots}/{total_slots}")
         
         return occupied_slots, total_slots
 
