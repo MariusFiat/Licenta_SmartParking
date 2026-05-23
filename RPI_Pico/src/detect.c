@@ -8,46 +8,55 @@
 #include "detect.h"
 #include "shared_resources.h"
 
+/* System states between detection and barrier_safety tasks.*/
+static Detect_State_t detectEntryState = IDLE;
+static Detect_State_t detectExitState = IDLE;
+
+uint8_t get_detectEntryState(void){
+    return detectEntryState;
+}
+
+void set_detectEntryState(uint8_t state){
+    detectEntryState = state;
+}
+
+uint8_t get_detectExitState(void){
+    return detectExitState;
+}
+
+void set_detectExitState(uint8_t state){
+    detectExitState = state;
+}
+
 void detect_entry(void* params){
     (void) params;
     
-    vTaskDelay(pdMS_TO_TICKS(3000)); //This init time must be moved in the init task. 
-    
     gpio_init(ENTRY_SENSOR);
     gpio_set_dir(ENTRY_SENSOR, GPIO_IN);
-    //printf("%s\n", "Run the detect method for entry!\n");
 
     while(true) {
-        if(xSemaphoreTake(xSemaphore_Entry_Res, 0) == pdFALSE) continue;
+        if(xSemaphoreTake(xSemaphore_Entry_Res, 0) == pdFALSE){  /* This semaphore is used to wait the init signal and for features blocking in the future mentenance mode */
+            vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
+            continue;
+        }
 
         bool object_detected = !gpio_get(ENTRY_SENSOR); 
 
-        //printf("%s - %d\n", "Detect entry! -> ", object_detected);
+        if(object_detected && (detectEntryState == IDLE)){
+            detectEntryState = ACTIVE;
 
-        if(object_detected){
             #if USE_PICO_WH == 1
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
             #endif
-            // Here I will send some data to the pico - rpi5 communication task. Those data will be written in the specific queue.
 
-            /* 
-                Semaphore that blocks the task in this point until the barrier is opend and than closed. In this way, I will send just a signal per car. 
-                This semaphore must be shared with the UART task. When a car was detected, the message is pushed into the UART_Req_Queue and the semaphore is decremented.
-                When the detection phase was done and the car access was allowed or denied, the UART task will increment this semaphore and this Detect_Task will be able to run again.
-
-            */
+            /* Send the entry request to the UART_Handler task. */
             xQueueSend(xQueue_Entry_Req, &object_detected, 0);
-            // xSemaphoreTake(xSemaphore_Entry_Res, portMAX_DELAY); /* Block and wait the signal from the uart handler task. */
-
-            // /* Block the detection until the car leave from the barrier area. */
             vTaskDelay(pdMS_TO_TICKS(500));
 
         } else {
             #if USE_PICO_WH == 1
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
             #endif
-            /* Do nothing. */
-            //xQueueSend(xQueue_Entry_Req, &object_detected, 0);
         }
 
         xSemaphoreGive(xSemaphore_Entry_Res);
@@ -64,25 +73,21 @@ void detect_exit(void* params){
     //printf("%s\n", "Run the detect method for exit!\n");
 
     while(true){
-        if(xSemaphoreTake(xSemaphore_Exit_Res, 0) == pdFALSE) continue;
+        if(xSemaphoreTake(xSemaphore_Exit_Res, 0) == pdFALSE){ /* This semaphore is used to wait the init signal and for features blocking in the future mentenance mode */
+            vTaskDelay(pdMS_TO_TICKS(TASK_DELAY)); 
+            continue;
+        }
 
         bool object_detected = !gpio_get(EXIT_SENSOR);
 
-        //printf("%s - %d\n", "Detect exit! -> ", object_detected);
-
-        if(object_detected){
+        if(object_detected && detectExitState == IDLE){  /* Check if the detection is in IDLE or not */
+            detectExitState = ACTIVE;
             //Save the signal in the communication Queue.
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
-            //xSemaphoreTake(xSemaphore_Exit_Res, portMAX_DELAY);
-
-            // /* Semaphore for closing sync. The timer that starts at barrier opening will block this semaphore
-            //     [..] and will release it after the car leave. Same approach on the both sides.
-            // */
             vTaskDelay(pdMS_TO_TICKS(500));
         }
         else{
             /* Do nothing. */
-            xQueueSend(xQueue_Exit_Req, &object_detected, 0);
         }
         
         xSemaphoreGive(xSemaphore_Exit_Res);

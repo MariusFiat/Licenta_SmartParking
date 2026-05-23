@@ -87,7 +87,7 @@ static void checkEntryRequest(){
 
                 }else{
                     /* The barrier remains closed.*/
-                    xSemaphoreGive(xSemaphore_Entry_Res); /* Wake-up the detect entry task. */
+                    xSemaphoreGive(xSemaphore_Barrier_Safety_Entry); /* Wake-up the barrier safety task. */
                 }
                 command_Entry[0] = 0;
                 readEntryResponseDone = false;
@@ -107,7 +107,6 @@ static void checkEntryRequest(){
                     //printf("%s\n", "The detect entry task is blocked");
                     lastEntryRead = true;
                     requestSent = true;
-                    xSemaphoreTake(xSemaphore_Entry_Res, 0); /* Call the semaphore to block the detect_entry task. Now, when the detect_entry task will call SemaporeTake, it will be blocked. */
 
                     /* Send the command on uart to the RPI5. The RPI5 will start the car plate detection stage and will replay with the result. */
                     printf("A");
@@ -143,7 +142,7 @@ static void checkExitRequest(){
             else{
                 //printf("Exit access denied!\n");
                 /* The barrier remains closed. */
-                xSemaphoreGive(xSemaphore_Exit_Res); /* Wake-up the detect exit task. */
+                xSemaphoreGive(xSemaphore_Barrier_Safety_Exit); /* Wake-up the barrier safety task. */
             }
             command_Exit[0] = 0;
             readExitResponseDone = false;
@@ -160,7 +159,6 @@ static void checkExitRequest(){
             if(sensorStateReceived == true && requestSent == false){
                 lastExitRead = true;
                 requestSent = true;
-                xSemaphoreTake(xSemaphore_Exit_Res, 0);
 
                 /* Send cmd to the RPI5 for processing the exit. */
                 printf("B");
