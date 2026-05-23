@@ -31,7 +31,7 @@ def send_init_sequence():
                 
     ser.write(command.encode('utf-8'))
     ser.flush()
-    print("[System]: The init command was send to the PICO!\n")
+    print("[System RP5]: The init command was send to the PICO!\n")
 
 def serial_handler():
     while True:
@@ -41,7 +41,7 @@ def serial_handler():
         if not line:
             continue
         
-        print(f"Command received : {line}")
+        print(f"[System RP5]: Command received : {line}")
         if "[RP2040]" in line:
                 continue
 
@@ -57,7 +57,7 @@ def serial_handler():
         #Consume the commands
         while serialQueue.empty() == False:
             command = serialQueue.get()
-            print(f"Command under execution: {command}")
+            print(f"[System RP5]: Command under execution: {command}")
             detectSide(command)
 
         time.sleep(0.01)
@@ -65,7 +65,7 @@ def serial_handler():
 
 def detectSide(side):
     if side == 'A':
-        print("[System] Entry request (A)")
+        print("[System RP5]: Entry request (A)")
         plateNumber = plateRecognition(cap, "left")
         result = check_license_plate(plateNumber)
         
@@ -79,17 +79,17 @@ def detectSide(side):
                 ser.write(command.encode('utf-8'))
                 ser.flush()
     
-                print(f"Sent to pico: {command.strip()}")
+                print(f"[System RP5]: Sent to pico: {command.strip()}")
             else:
                 ser.write("END000\n".encode('utf-8'))
                 ser.flush()
-                print("Sent to Pico: END000. Permission denied!")
+                print("[System RP5]: Sent to Pico: END000. Permission denied!")
         else:
             ser.write("END000\n".encode('utf-8'))
             ser.flush()
-            print("Sent catre Pico: END000. Invalid number")
+            print("[System RP5]: Sent to Pico: END000. Invalid number")
     else:
-        print("[System] Exit request (B)")
+        print("[System RP5]: Exit request (B)")
         plateNumber = plateRecognition(cap, "right")
         result = check_license_plate(plateNumber)
 
@@ -99,20 +99,20 @@ def detectSide(side):
             if status == True:    
                 ser.write("EXA000\n".encode('utf-8'))
                 ser.flush()
-                print("Sent to Pico: EXA000")
+                print("[System RP5]: Sent to Pico: EXA000. ")
             else:
                 ser.write("EXD000\n".encode('utf-8'))
                 ser.flush()
-                print("Sent to Pico: EXD000")
+                print("[System RP5]: Sent to Pico: EXD000")
         else:
             #Incorrect detection
             ser.write("EXD000\n".encode('utf-8'))
             ser.flush()
-            print("Sent to Pico: EXD000.")
+            print("[System RP5]: Sent to Pico: EXD000. Invalid number")
 
 
 def main():
-    print("\nStarting parking recognition service...")
+    print("\n[System RP5]: Starting parking recognition service...")
 
     #Update tax field daemon thread
     Tax_Thread = Thread(target = calculate_the_taxes_scheduled_task, daemon = True) #This task is a main helper, it must die when the main thread stops.
