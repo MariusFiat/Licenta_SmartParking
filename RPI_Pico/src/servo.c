@@ -71,12 +71,14 @@ void servo_task(void* pvParams) {
             if(xQueueReceive(xQueue_Servo_Entry, &entryServo, 0) == pdPASS){
                 entryState = entryServo.state;
                 dirEntry = entryServo.dir;
+                xQueueReset(xQueue_Servo_Entry);
             }
 
         
             if(xQueueReceive(xQueue_Servo_Exit, &exitServo, 0) == pdPASS){
                 exitState = exitServo.state;
                 dirExit = exitServo.dir;
+                xQueueReset(xQueue_Servo_Safety_Exit);
             }
 
         // Entry barrier
@@ -107,6 +109,7 @@ void servo_task(void* pvParams) {
                     entryState = BARRIER_MOVING;
                     dirEntry = false;
                 }
+                xQueueReset(xQueue_Servo_Safety_Entry);
             }
         }
 
@@ -135,6 +138,7 @@ void servo_task(void* pvParams) {
                     exitState = BARRIER_MOVING;
                     dirExit = false;
                 }
+                xQueueReset(xQueue_Servo_Safety_Exit);
             }
         }
 

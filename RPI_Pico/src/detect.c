@@ -80,7 +80,7 @@ void detect_exit(void* params){
 
         bool object_detected = !gpio_get(EXIT_SENSOR);
 
-        if(object_detected && detectExitState == IDLE){  /* Check if the detection is in IDLE or not */
+        if(object_detected && (detectExitState == IDLE)){  /* Check if the detection is in IDLE or not */
             detectExitState = ACTIVE;
             //Save the signal in the communication Queue.
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
