@@ -44,7 +44,10 @@ def check_plate_in_the_reservation_table(plate):
             else:
                 print(f"[System RP5]: The car with the plate number: {plate} was found in the db and is associated with a standard account!")
                 
-            assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='STANDARD')
+            if owner_details[3] == 'EMPLOYEE':
+                assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 0, slot_type ='STANDARD')
+            else:
+                assigned_slot = insert_new_car(plate, owner_details[0], 'STATUS_PARKED', 1, slot_type ='STANDARD')
             
             if assigned_slot != -1:
                 print(f"[System RP5]: The assigned parking slot is: {assigned_slot}")
@@ -57,7 +60,7 @@ def check_plate_in_the_reservation_table(plate):
             # id_owner = UNKNOWN_USER_UUID is the default user_id for unknown car_plates!!!!!
             
             # Modified: Passed UNKNOWN_USER_UUID instead of 0
-            assigned_slot = insert_new_car(plate, UNKNOWN_USER_UUID, 'STATUS_PARKED', 0) 
+            assigned_slot = insert_new_car(plate, UNKNOWN_USER_UUID, 'STATUS_PARKED', 1) 
         return assigned_slot
     
 
