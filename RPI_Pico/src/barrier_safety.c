@@ -36,41 +36,65 @@ void checkEntry() {
     if (xSemaphoreTake(xSemaphore_Barrier_Safety_Entry, 0) == pdTRUE) {
         
         bool is_car_still_there = !gpio_get(ENTRY_SENSOR) || !gpio_get(ENTRY_SAFETY_SENSOR);
+        static uint8_t counter = 0;
 
         if (is_car_still_there) {
-            /* Do nothing */
+            /* The car is still there  */
+            counter = 0;
 
             xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
         } else {
-            ServoMessage_t closeMsg = {true, false};
-            xQueueSend(xQueue_Servo_Safety_Entry, &closeMsg, 0);
+            counter++;
+            
+            if(counter >= 4){
+                send_log_message("Send the closing message to the entry barrier!", 0);
 
-            xQueueReset(xQueue_Entry_Req);
-            send_command_to_detection_zone_leds(OFF); /* Turn OFF the detection zone leds. */
-            set_detectEntryState(IDLE);         /* Open detection on entry side. */
-            xSemaphoreGive(xSemaphore_Entry_Res);
+                counter = 0;
+                ServoMessage_t closeMsg = {true, false};
+                xQueueSend(xQueue_Servo_Safety_Entry, &closeMsg, 0);
+
+                xQueueReset(xQueue_Entry_Req);
+                send_command_to_detection_zone_leds(OFF); 
+                set_detectEntryState(IDLE);         
+                
+                xSemaphoreGive(xSemaphore_Entry_Res); 
+            } else {
+                xSemaphoreGive(xSemaphore_Barrier_Safety_Entry);
+            }
         }
     }
 }
 
 void checkExit(){
     if(xSemaphoreTake(xSemaphore_Barrier_Safety_Exit, 0) == pdTRUE){
-         bool is_car_still_there = !gpio_get(EXIT_SENSOR) || !gpio_get(EXIT_SAFETY_SENSOR);
-
+        bool is_car_still_there = !gpio_get(EXIT_SENSOR) || !gpio_get(EXIT_SAFETY_SENSOR);
+        static uint8_t counter = 0;
+        
         if(is_car_still_there){
-            /* The car is still in the barrier area. Do nothing. */
-            
+            /* The car is still there. */
+            counter = 0;
+
             xSemaphoreGive(xSemaphore_Barrier_Safety_Exit);
         }else{
-            ServoMessage_t closeMsg = {true, false};
-            xQueueReset(xQueue_Exit_Req);
-            xQueueSend(xQueue_Servo_Safety_Exit, &closeMsg, 0);
-            
-            xQueueReset(xQueue_Exit_Req);
-            send_command_to_detection_zone_leds(OFF); /* Turn on the detection zone leds. */
-            set_detectExitState(IDLE);              /* Open the detection on exit side */
-            xSemaphoreGive(xSemaphore_Exit_Res);
+            counter++;
+
+            if(counter >= 4){
+                counter = 0;
+
+                send_log_message("Send the closing message to the exit barrier!", 0);
+
+                ServoMessage_t closeMsg = {true, false};
+                
+                xQueueSend(xQueue_Servo_Safety_Exit, &closeMsg, 0);
+                xQueueReset(xQueue_Exit_Req);
+                
+                send_command_to_detection_zone_leds(OFF); 
+                set_detectExitState(IDLE);              
+                
+                xSemaphoreGive(xSemaphore_Exit_Res);
+            } else {
+                xSemaphoreGive(xSemaphore_Barrier_Safety_Exit);
+            }
         }
     }
-
 }
