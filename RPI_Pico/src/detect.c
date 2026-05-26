@@ -7,6 +7,7 @@
 #include "board_config.h"
 #include "detect.h"
 #include "shared_resources.h"
+#include "lights_controller.h"
 
 /* System states between detection and barrier_safety tasks.*/
 static Detect_State_t detectEntryState = IDLE;
@@ -44,6 +45,7 @@ void detect_entry(void* params){
 
         if(object_detected && (detectEntryState == IDLE)){
             detectEntryState = ACTIVE;
+            send_command_to_detection_zone_leds(ON); /* Turns on the detection zone leds. */
 
             #if USE_PICO_WH == 1
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
@@ -82,6 +84,8 @@ void detect_exit(void* params){
 
         if(object_detected && (detectExitState == IDLE)){  /* Check if the detection is in IDLE or not */
             detectExitState = ACTIVE;
+            send_command_to_detection_zone_leds(ON); /* Turns on the detection zone leds. */
+
             //Save the signal in the communication Queue.
             xQueueSend(xQueue_Exit_Req, &object_detected, 0);
             vTaskDelay(pdMS_TO_TICKS(500));

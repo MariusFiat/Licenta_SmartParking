@@ -68,10 +68,24 @@ void lights_controller_task(void* pvParams){
 }
 
 static void update_lights_status(uint8_t slot, uint8_t* data_slave_0, uint8_t* data_slave_1, int8_t value){
+    uint8_t initial_slot = slot;
     ADD_SLOT_OFFSET(slot); /* First three reds will be on for every slot that is selected. */
 
     for(int i = 0; i <= slot; i++){ /* This section needs a mutex. */
         leds_status[i] += value; /* Mark this led as on. */
+    }
+
+    /* This check must update the lights with the position greater than 5 (number of slots available. */
+    if(initial_slot == 3){
+        /* Turn on the led that is in the opposite side of slot 3. */
+        leds_status[13] += value;
+    } else if(initial_slot == 4){
+        leds_status[12] += value;
+        leds_status[13] += value;
+    } else if(initial_slot == 5){
+        for(int i = slot; i < 14; i++){
+            leds_status[i] += value;
+        }
     }
 
     /* Check all leds that needs to be on. */
@@ -163,4 +177,44 @@ static void test_io_Expander(void){
     i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_off, 1, false);
 
     vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+
+/*
+    *Arguments: boolean status
+    *           True = turns on the detection leds
+    *           False = turns off the detection leds
+    *Brief: This function controls the detection leds.
+*/
+void send_command_to_detection_zone_leds(bool status){
+    uint8_t data_leds = 0;
+
+    /* Check the abmient brightness. If it's under the threshold, we won't turn on the lights. But the turn off command will be executed. */
+    if(((get_brightness() && 0xFFF) < BRIGHTNESS_THRESHOLD) && status == ON){
+        return; /* Do nothing. Ignore the request. */
+    }
+
+    /* Firstly I have to get the status for the rest of the leds. 8 - 13. Just the last two leds must be changed to ON or OFF depending on status arguments. */
+    for(int i = 8; i < 16; i++){
+        if(leds_status[i - 8] > 0){
+            TURN_ON(data_leds, i - 8);          /* This is the payload for the second IOExpander chip */
+        } else if((i == 14) || (i == 15)){
+            if(status == ON){
+                leds_status[i - 8] += 1;
+                TURN_ON(data_leds, i - 8);          /* Turn ON the detection leds  */
+            }
+            else {
+                leds_status[i - 8] -= 1;
+                if(leds_status[i - 8] == 0){
+                    TURN_OFF(data_leds, i - 8);          /* Turn OFF the detection leds */
+                }else {
+                    TURN_ON(data_leds, i - 8);          /* Keep the detection leds ON because there is another car in the detection zone. */    
+                }
+            }
+        } else {
+            TURN_OFF(data_leds, i - 8);
+        }
+    }
+
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &data_leds, 1, false); /* Send the configuration to the IOExpander that controls the leds with number 8 - 15. */
 }

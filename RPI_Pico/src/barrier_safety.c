@@ -8,6 +8,7 @@
 #include "shared_resources.h"
 #include "barrier_safety.h"
 #include "detect.h"
+#include "lights_controller.h"
 
 void checkEntry();
 void checkExit();
@@ -45,6 +46,7 @@ void checkEntry() {
             xQueueSend(xQueue_Servo_Safety_Entry, &closeMsg, 0);
 
             xQueueReset(xQueue_Entry_Req);
+            send_command_to_detection_zone_leds(OFF); /* Turn OFF the detection zone leds. */
             set_detectEntryState(IDLE);         /* Open detection on entry side. */
             xSemaphoreGive(xSemaphore_Entry_Res);
         }
@@ -65,6 +67,7 @@ void checkExit(){
             xQueueSend(xQueue_Servo_Safety_Exit, &closeMsg, 0);
             
             xQueueReset(xQueue_Exit_Req);
+            send_command_to_detection_zone_leds(OFF); /* Turn on the detection zone leds. */
             set_detectExitState(IDLE);              /* Open the detection on exit side */
             xSemaphoreGive(xSemaphore_Exit_Res);
         }
