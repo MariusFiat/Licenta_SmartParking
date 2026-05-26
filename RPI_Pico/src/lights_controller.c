@@ -90,7 +90,7 @@ static void update_lights_status(uint8_t slot, uint8_t* data_slave_0, uint8_t* d
     // }
 
     /* Check all leds that needs to be on. */
-    for(int i = 0; i <= 13; i++){
+    for(int i = 0; i < NUMBER_OF_LIGHTS; i++){
         if(leds_status[i] > 0){
             if(i > 7){
                 TURN_ON(*data_slave_1, i-8);

@@ -47,7 +47,7 @@ void checkEntry() {
             counter++;
             
             if(counter >= 4){
-                send_log_message("Send the closing message to the entry barrier!", 0);
+                /* The barrier can be closed.*/
 
                 counter = 0;
                 ServoMessage_t closeMsg = {true, false};
@@ -79,10 +79,9 @@ void checkExit(){
             counter++;
 
             if(counter >= 4){
+                /* The barrier can be closed. */
+                
                 counter = 0;
-
-                send_log_message("Send the closing message to the exit barrier!", 0);
-
                 ServoMessage_t closeMsg = {true, false};
                 
                 xQueueSend(xQueue_Servo_Safety_Exit, &closeMsg, 0);
