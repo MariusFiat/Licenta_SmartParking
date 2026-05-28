@@ -10,7 +10,7 @@
 #include "shared_resources.h"
 #include "brightness_module.h"
 
-#define NUMBER_OF_LIGHTS 13
+#define NUMBER_OF_LIGHTS 16
 /* Leds that are connected to the PCF with slave address 0x38 */
 #define LED0 0
 #define LED1 1
@@ -30,6 +30,7 @@
 #define LED13 5
 #define LED14 6 // Will be used for detection
 #define LED15 7 // Will be used for detection
+#define LED_OFFSET_PCF_1 8
 
 #define ALL_OFF 0xFF
 #define ALL_ON 0xFF
@@ -43,7 +44,7 @@
 #define BRIGHTNESS_THRESHOLD 2000 /* The actual value read by the ADC module*/
 
 /* Local variables */
-static uint8_t leds_status[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /* This will be an array that will contain the number of references that needs each led. */
+static uint8_t leds_status[NUMBER_OF_LIGHTS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0}; /* This will be an array that will contain the number of references that needs each led. */
 
 /* Local functions */
 static void test_io_Expander(void);
@@ -68,14 +69,28 @@ void lights_controller_task(void* pvParams){
 }
 
 static void update_lights_status(uint8_t slot, uint8_t* data_slave_0, uint8_t* data_slave_1, int8_t value){
+    uint8_t initial_slot = slot;
     ADD_SLOT_OFFSET(slot); /* First three reds will be on for every slot that is selected. */
 
     for(int i = 0; i <= slot; i++){ /* This section needs a mutex. */
         leds_status[i] += value; /* Mark this led as on. */
     }
 
+    /* This check must update the lights with the position greater than 5 (number of slots available. */
+    // if(initial_slot == 3){
+    //     /* Turn on the led that is in the opposite side of slot 3. */
+    //     leds_status[13] += value;
+    // } else if(initial_slot == 4){
+    //     leds_status[12] += value;
+    //     leds_status[13] += value;
+    // } else if(initial_slot == 5){
+    //     for(int i = slot; i < 14; i++){
+    //         leds_status[i] += value;
+    //     }
+    // }
+
     /* Check all leds that needs to be on. */
-    for(int i = 0; i <= 13; i++){
+    for(int i = 0; i < NUMBER_OF_LIGHTS; i++){
         if(leds_status[i] > 0){
             if(i > 7){
                 TURN_ON(*data_slave_1, i-8);
@@ -163,4 +178,49 @@ static void test_io_Expander(void){
     i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &val_off, 1, false);
 
     vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+
+/*
+    *Arguments: boolean status
+    *           True = turns on the detection leds
+    *           False = turns off the detection leds
+    *Brief: This function controls the detection leds.
+*/
+void send_command_to_detection_zone_leds(bool status){
+    uint8_t data_leds = 0;
+
+    /* Check the abmient brightness. If it's under the threshold, we won't turn on the lights. But the turn off command will be executed. */
+    // if(((get_brightness() && 0xFFF) < BRIGHTNESS_THRESHOLD) && (status == ON)){
+    //     return; /* Do nothing. Ignore the request. */
+    // }
+
+    /* Firstly I have to get the status for the rest of the leds. 8 - 13. Just the last two leds must be changed to ON or OFF depending on status arguments. */
+    for(int i = 8; i < 14; i++){
+        if(leds_status[i] > 0){
+            TURN_ON(data_leds, i - 8);          /* This is the payload for the second IOExpander chip */
+        } else {
+            TURN_OFF(data_leds, i - 8);
+        }
+    }
+
+    if(status == ON){
+        leds_status[LED14 + LED_OFFSET_PCF_1] += 1;
+        leds_status[LED15 + LED_OFFSET_PCF_1] += 1;
+        TURN_ON(data_leds, LED14);
+        TURN_ON(data_leds, LED15);
+    }else{
+        leds_status[LED14 + LED_OFFSET_PCF_1] -= 1;
+        leds_status[LED15 + LED_OFFSET_PCF_1] -= 1;
+        if(leds_status[LED14 + LED_OFFSET_PCF_1] == 0){
+            TURN_OFF(data_leds, LED14);
+            TURN_OFF(data_leds, LED15);
+        }
+        else{
+            TURN_ON(data_leds, LED14);
+            TURN_ON(data_leds, LED15);
+        }
+    }
+
+    i2c_write_blocking(I2C_PORT, PCF_1_ADDR, &data_leds, 1, false); /* Send the configuration to the IOExpander that controls the leds with number 8 - 15. */
 }

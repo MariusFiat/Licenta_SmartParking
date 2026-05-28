@@ -72,12 +72,14 @@ void servo_task(void* pvParams) {
                 entryState = entryServo.state;
                 dirEntry = entryServo.dir;
                 xQueueReset(xQueue_Servo_Entry);
+                xQueueReset(xQueue_Servo_Safety_Entry);
             }
 
         
             if(xQueueReceive(xQueue_Servo_Exit, &exitServo, 0) == pdPASS){
                 exitState = exitServo.state;
                 dirExit = exitServo.dir;
+                xQueueReset(xQueue_Servo_Exit);
                 xQueueReset(xQueue_Servo_Safety_Exit);
             }
 
