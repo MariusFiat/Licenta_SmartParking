@@ -13,6 +13,12 @@ NUMBER_OF_SLOTS = 5
 # We define a constant for the guest user ID (all zeros UUID)
 UNKNOWN_USER_UUID = "00000000-0000-0000-0000-000000000000"
 
+def create_roles_enum_type(conn, cur):
+    create_roles_query = """CREATE TYPE app_role AS ENUM ('user', 'admin', 'operator');"""
+    cur.execute(create_roles_query)
+    conn.commit()
+    print("The enum type 'app_role' was created succesfully!")
+
 def create_parking_details_table(conn, cur):
     create_parking_details_query = """
         CREATE TABLE IF NOT EXISTS parking_details (
@@ -34,7 +40,8 @@ def create_user_details_table(conn, cur):
             id UUID PRIMARY KEY,
             first_name TEXT NOT NULL,
             last_name TEXT NOT NULL,
-            subscription_type TEXT NOT NULL
+            subscription_type TEXT NOT NULL,
+            roles app_role[] DEFAULT ARRAY['user']::app_role[]
         );
     """
     cur.execute(create_user_details_query)
@@ -355,16 +362,32 @@ def insert_parking_history_from_csv(conn, cur):
     except Exception as e:
         print(f"Error during historical data insertion: {e}")
 
+def delete_all_data(conn, cur):
+    tables = ['reservation', 'slots', 'car', 'user_details', 'parking_history', 'parking_details']
+    for table in tables:
+        cur.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+
+    cur.execute("DROP TYPE IF EXISTS app_role CASCADE;")
+    
+    conn.commit()
+    print("All previous tables and types were dropped!")
+
 def create_database_tables():
     try:
         conn = psycopg2.connect(DB_URL)
         cur = conn.cursor()
-
+        
+        #Delete all existing tables
+        delete_all_data(conn, cur)
+        
+        #Recreate all tables and related database objects
+        create_roles_enum_type(conn, cur) # Create the enum type before any table that uses it
         create_parking_details_table(conn, cur) # Need this first for slots
         create_user_details_table(conn, cur)
+        create_slots_table(conn, cur)
         create_car_table(conn, cur)
         create_reservation_table(conn, cur)
-        create_slots_table(conn, cur)
+        create_parking_history_table(conn, cur)
         
         insert_initial_parking_details(conn, cur)
         setup_auth_trigger(conn, cur)
@@ -372,7 +395,6 @@ def create_database_tables():
         insert_default_available_slots(conn, cur)
         create_the_make_reservation_function(conn, cur)
         create_the_update_future_reservation_function(conn, cur)
-        create_parking_history_table(conn, cur)
         insert_parking_history_from_csv(conn, cur)
 
     except Exception as e:
