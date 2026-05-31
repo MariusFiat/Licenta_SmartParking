@@ -368,9 +368,27 @@ def delete_all_data(conn, cur):
         cur.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
 
     cur.execute("DROP TYPE IF EXISTS app_role CASCADE;")
+    cur.execute("DELETE FROM auth.users;")
     
     conn.commit()
     print("All previous tables and types were dropped!")
+
+def delete_user_auth_table(conn, cur):
+    function_sql = """
+        CREATE OR REPLACE FUNCTION delete_user_from_auth(target_user_id UUID)
+        RETURNS void
+        LANGUAGE plpgsql
+        SECURITY DEFINER SET search_path = public
+        AS $$
+        BEGIN
+            DELETE FROM user_details WHERE id = target_user_id;
+            DELETE FROM auth.users WHERE id = target_user_id;
+        END;
+        $$;
+    """
+    cur.execute(function_sql)
+    conn.commit()
+    print("The function to delete users from auth.users was created succesfully!")
 
 def create_database_tables():
     try:
@@ -395,6 +413,7 @@ def create_database_tables():
         insert_default_available_slots(conn, cur)
         create_the_make_reservation_function(conn, cur)
         create_the_update_future_reservation_function(conn, cur)
+        delete_user_auth_table(conn, cur)  #* RPC function to delete users from auth.users, useful for testing purposes
         insert_parking_history_from_csv(conn, cur)
 
     except Exception as e:
