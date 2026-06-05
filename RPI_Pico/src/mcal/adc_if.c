@@ -1,7 +1,7 @@
 /*
     * adc_if.c
     *
-    *  Created on: 8 May 2024
+    *  Created on: 8 May 2026
     *  MCU Abstraction Layer for ADC peripheral. 
     *  This file provide the necessary interfaces for ADC usage.
 */
