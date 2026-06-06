@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "board_config.h"
+#include "../board_config.h"
 
 #include "adc_if.h"
 

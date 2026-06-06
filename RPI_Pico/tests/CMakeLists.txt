@@ -17,6 +17,7 @@ FetchContent_MakeAvailable(googletest)
 #Test exec files
 add_executable(run_tests 
     src/gpio/test_gpio.cpp
+    src/adc/adc_test.cpp     
 )
 
 target_link_libraries(run_tests gtest_main)

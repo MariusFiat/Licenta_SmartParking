@@ -11,7 +11,7 @@ extern "C" {
 
 class GpioTest : public ::testing::Test {
 protected:
-    void SetUp() override {.   /* This method will be executed before each test */
+    void SetUp() override {   /* This method will be executed before each test */
         mock_sio_out_set = 1; 
     }
 };
