@@ -86,9 +86,9 @@
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 
 /* Run time and task stats gathering related definitions. */
-#define configGENERATE_RUN_TIME_STATS           0
+#define configGENERATE_RUN_TIME_STATS           1
 #define configUSE_TRACE_FACILITY                1
-#define configUSE_STATS_FORMATTING_FUNCTIONS    0
+#define configUSE_STATS_FORMATTING_FUNCTIONS    1
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES                   0
@@ -143,5 +143,21 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder            1
 
 /* A header file that defines trace macro can be included here. */
+
+/* =================================================================== */
+/* SETĂRI PENTRU ANALIZA DE PERFORMANȚĂ (RUN-TIME STATS)               */
+/* =================================================================== */
+#define configUSE_TRACE_FACILITY                1
+#define configGENERATE_RUN_TIME_STATS           1
+#define configUSE_STATS_FORMATTING_FUNCTIONS    1
+#define configSUPPORT_DYNAMIC_ALLOCATION        1
+
+#ifndef __ASSEMBLER__
+    #include "pico/time.h"
+#endif
+
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() 
+#define portGET_RUN_TIME_COUNTER_VALUE()         time_us_32()
+/* =================================================================== */
 
 #endif /* FREERTOS_CONFIG_H */
