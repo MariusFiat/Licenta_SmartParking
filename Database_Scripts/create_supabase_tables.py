@@ -54,7 +54,6 @@ def create_car_table(conn, cur):
             id SERIAL PRIMARY KEY,
             car_plate TEXT NOT NULL,
             id_owner UUID REFERENCES user_details(id) ON DELETE CASCADE,
-            parking_slot INTEGER,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
     """
