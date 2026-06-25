@@ -24,7 +24,7 @@ def create_parking_details_table(conn, cur):
         CREATE TABLE IF NOT EXISTS parking_details (
             id SERIAL PRIMARY KEY,
             pricing DOUBLE PRECISION,
-            number_of_slots INTEGER,
+            number_of_slots INTEGER
         );
     """
     cur.execute(create_parking_details_query)
