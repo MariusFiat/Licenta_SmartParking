@@ -191,6 +191,7 @@ def create_the_make_reservation_function(conn, cur):
             -- Verify time overlap (similar to how we do it for slots)
             AND start_timestamp < v_end_time
             AND (start_timestamp + (number_of_hours || ' hours')::interval) > p_start_time
+            AND status IN ('STATUS_BOOKED', 'STATUS_ACTIVE')
         ) THEN
             -- If we get here, we stop everything and throw an error!
             RAISE EXCEPTION 'Car % already has a reservation in this time interval!', p_car_plate;
