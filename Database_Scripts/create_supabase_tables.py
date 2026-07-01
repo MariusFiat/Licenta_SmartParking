@@ -24,8 +24,7 @@ def create_parking_details_table(conn, cur):
         CREATE TABLE IF NOT EXISTS parking_details (
             id SERIAL PRIMARY KEY,
             pricing DOUBLE PRECISION,
-            number_of_slots INTEGER,
-            slots INTEGER
+            number_of_slots INTEGER
         );
     """
     cur.execute(create_parking_details_query)
@@ -54,7 +53,6 @@ def create_car_table(conn, cur):
             id SERIAL PRIMARY KEY,
             car_plate TEXT NOT NULL,
             id_owner UUID REFERENCES user_details(id) ON DELETE CASCADE,
-            parking_slot INTEGER,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
     """
@@ -158,11 +156,11 @@ def insert_initial_parking_details(conn, cur):
     conn.commit()
     
     insert_query = """
-        INSERT INTO parking_details (id, pricing, number_of_slots, slots)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO parking_details (id, pricing, number_of_slots)
+        VALUES (%s, %s, %s)
         ON CONFLICT (id) DO NOTHING;
     """
-    record_to_insert = (1, 3.0, NUMBER_OF_SLOTS, NUMBER_OF_SLOTS)
+    record_to_insert = (1, 3.0, NUMBER_OF_SLOTS)
     
     cur.execute(insert_query, record_to_insert)
     conn.commit()
@@ -193,6 +191,7 @@ def create_the_make_reservation_function(conn, cur):
             -- Verify time overlap (similar to how we do it for slots)
             AND start_timestamp < v_end_time
             AND (start_timestamp + (number_of_hours || ' hours')::interval) > p_start_time
+            AND status IN ('STATUS_BOOKED', 'STATUS_ACTIVE')
         ) THEN
             -- If we get here, we stop everything and throw an error!
             RAISE EXCEPTION 'Car % already has a reservation in this time interval!', p_car_plate;
