@@ -77,17 +77,17 @@ static void update_lights_status(uint8_t slot, uint8_t* data_slave_0, uint8_t* d
     }
 
     /* This check must update the lights with the position greater than 5 (number of slots available. */
-    // if(initial_slot == 3){
-    //     /* Turn on the led that is in the opposite side of slot 3. */
-    //     leds_status[13] += value;
-    // } else if(initial_slot == 4){
-    //     leds_status[12] += value;
-    //     leds_status[13] += value;
-    // } else if(initial_slot == 5){
-    //     for(int i = slot; i < 14; i++){
-    //         leds_status[i] += value;
-    //     }
-    // }
+     if(initial_slot == 3){
+        /* Turn on the led that is in the opposite side of slot 3. */
+         leds_status[13] += value;
+     } else if(initial_slot == 4){
+         leds_status[13] += value;
+         leds_status[12] += value;
+     } else if(initial_slot == 5){
+         for(int i = slot; i < 12; i++){
+             leds_status[i] += value;
+         }
+     }
 
     /* Check all leds that needs to be on. */
     for(int i = 0; i < NUMBER_OF_LIGHTS; i++){
